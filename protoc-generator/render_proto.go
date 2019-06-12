@@ -20,6 +20,9 @@ import (
 	"unicode/utf8"
 )
 
+var descriptorTypeToProtoType = createMapping()
+var labelMapping = createLabelMapping()
+
 func (renderer *Renderer) RenderProto(fileDescrProto *descriptor.FileDescriptorProto) ([]byte, error) {
 	renderer.currFileDescriptor = fileDescrProto
 
@@ -119,7 +122,6 @@ func renderMessages(f *LineWriter, messages []*descriptor.DescriptorProto) {
 }
 
 func renderEnums(f *LineWriter, enums []*descriptor.EnumDescriptorProto) {
-
 	for _, enum := range enums {
 		f.WriteLine(`enum ` + *enum.Name + ` {`)
 		for _, value := range enum.Value {
@@ -131,11 +133,16 @@ func renderEnums(f *LineWriter, enums []*descriptor.EnumDescriptorProto) {
 }
 
 func renderFields(f *LineWriter, fields []*descriptor.FieldDescriptorProto) {
-	labelMapping := make(map[descriptor.FieldDescriptorProto_Label]string)
-	labelMapping[descriptor.FieldDescriptorProto_LABEL_OPTIONAL] = ""
-	labelMapping[descriptor.FieldDescriptorProto_LABEL_REPEATED] = " repeated"
-	labelMapping[descriptor.FieldDescriptorProto_LABEL_REQUIRED] = " required"
+	for _, field := range fields {
+		protobufType := descriptorTypeToProtoType[*field.Type]
+		if protobufType == "" && field.TypeName != nil {
+			protobufType = *field.TypeName
+		}
+		f.WriteLine(labelMapping[*field.Label] + " " + protobufType + " " + *field.Name + " = " + strconv.Itoa(int(*field.Number)) + `;`)
+	}
+}
 
+func createMapping() map[descriptor.FieldDescriptorProto_Type]string {
 	typeMapping := make(map[descriptor.FieldDescriptorProto_Type]string)
 	typeMapping[descriptor.FieldDescriptorProto_TYPE_DOUBLE] = "double"
 	typeMapping[descriptor.FieldDescriptorProto_TYPE_FLOAT] = "float"
@@ -155,14 +162,15 @@ func renderFields(f *LineWriter, fields []*descriptor.FieldDescriptorProto) {
 	typeMapping[descriptor.FieldDescriptorProto_TYPE_SFIXED64] = "sfixed64"
 	typeMapping[descriptor.FieldDescriptorProto_TYPE_SINT32] = "sint32"
 	typeMapping[descriptor.FieldDescriptorProto_TYPE_SINT64] = "sint64"
+	return typeMapping
+}
 
-	for _, field := range fields {
-		protobufType := typeMapping[*field.Type]
-		if protobufType == "" && field.TypeName != nil {
-			protobufType = *field.TypeName
-		}
-		f.WriteLine(labelMapping[*field.Label] + " " + protobufType + " " + *field.Name + " = " + strconv.Itoa(int(*field.Number)) + `;`)
-	}
+func createLabelMapping() map[descriptor.FieldDescriptorProto_Label]string {
+	labelMapping := make(map[descriptor.FieldDescriptorProto_Label]string)
+	labelMapping[descriptor.FieldDescriptorProto_LABEL_OPTIONAL] = ""
+	labelMapping[descriptor.FieldDescriptorProto_LABEL_REPEATED] = " repeated"
+	labelMapping[descriptor.FieldDescriptorProto_LABEL_REQUIRED] = " required"
+	return labelMapping
 }
 
 // WATCH OUT FOR:
@@ -179,7 +187,4 @@ func renderFields(f *LineWriter, fields []*descriptor.FieldDescriptorProto) {
 
 //TODO: Flatten URL Path parameters (query params don't need to be flattened!)
 
-//TODO: Finish testing pipeline
-//TODO: Make initial entry in Design Doc
 //TODO: Take a look a look at comments from Noah
-//TODO: Set up CI (circleCI?)
