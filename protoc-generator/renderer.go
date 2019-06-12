@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package protoc_generator
 
 import (
 	"fmt"
@@ -39,7 +39,7 @@ func (renderer *Renderer) Render(response *plugins.Response) (err error) {
 
 	for _, fileDescriptor := range renderer.fileDescriptorSet.File {
 		file := &plugins.File{}
-		file.Name = *fileDescriptor.Name
+		file.Name = *fileDescriptor.Name + ".proto"
 		file.Data, err = renderer.RenderProto(fileDescriptor)
 		if err != nil {
 			response.Errors = append(response.Errors, fmt.Sprintf("ERROR %v", err))

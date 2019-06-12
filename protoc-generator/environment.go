@@ -1,4 +1,4 @@
-package main
+package protoc_generator
 
 import (
 	"errors"
@@ -12,6 +12,7 @@ import (
 	"path"
 )
 
+// TODO: This could be merged into gnostic/plugins. Basically only adapted it for FileDescriptorSet
 func NewEnvironment() (env *plugins.Environment, err error) {
 	env = &plugins.Environment{
 		Invocation: os.Args[0],

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package protoc_generator
 
 import (
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
@@ -24,7 +24,7 @@ func (renderer *Renderer) RenderProto(fileDescrProto *descriptor.FileDescriptorP
 	renderer.currFileDescriptor = fileDescrProto
 
 	f := NewLineWriter()
-	removePackageFromNames(renderer)
+	//removePackageFromNames(renderer)
 
 	// TODO: print license
 	f.WriteLine("// GENERATED FILE: DO NOT EDIT!")
@@ -142,7 +142,7 @@ func renderFields(f *LineWriter, fields []*descriptor.FieldDescriptorProto) {
 	typeMapping[descriptor.FieldDescriptorProto_TYPE_INT64] = "int64"
 	typeMapping[descriptor.FieldDescriptorProto_TYPE_UINT64] = "uint64"
 
-	typeMapping[descriptor.FieldDescriptorProto_TYPE_INT32] = "int64"
+	typeMapping[descriptor.FieldDescriptorProto_TYPE_INT32] = "int32"
 	typeMapping[descriptor.FieldDescriptorProto_TYPE_FIXED64] = "fixed64"
 	typeMapping[descriptor.FieldDescriptorProto_TYPE_FIXED32] = "fixed32"
 	typeMapping[descriptor.FieldDescriptorProto_TYPE_BOOL] = "bool"
@@ -164,3 +164,22 @@ func renderFields(f *LineWriter, fields []*descriptor.FieldDescriptorProto) {
 		f.WriteLine(labelMapping[*field.Label] + " " + protobufType + " " + *field.Name + " = " + strconv.Itoa(int(*field.Number)) + `;`)
 	}
 }
+
+// WATCH OUT FOR:
+// The path template may refer to one or more fields in the gRPC request message, as long
+// as each field is a non-repeated field with a primitive (non-message) type.
+// see: https://github.com/googleapis/googleapis/blob/a8ee1416f4c588f2ab92da72e7c1f588c784d3e6/google/api/http.proto#L62
+// AND:
+// Note that fields which are mapped to URL query parameters must have a
+// primitive type or a repeated primitive type or a non-repeated message type.
+// see: https://github.com/googleapis/googleapis/blob/a8ee1416f4c588f2ab92da72e7c1f588c784d3e6/google/api/http.proto#L119
+
+//TODO: handle enum. Not sure if possible, because of
+//TODO: https://github.com/googleapis/googleapis/blob/a8ee1416f4c588f2ab92da72e7c1f588c784d3e6/google/api/http.proto#L62
+
+//TODO: Flatten URL Path parameters (query params don't need to be flattened!)
+
+//TODO: Finish testing pipeline
+//TODO: Make initial entry in Design Doc
+//TODO: Take a look a look at comments from Noah
+//TODO: Set up CI (circleCI?)
