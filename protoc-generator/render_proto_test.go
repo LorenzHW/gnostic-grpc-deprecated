@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestFileDescriptorGenerator(t *testing.T) {
+func TestProtoGenerator(t *testing.T) {
 	input := "test_data/parameters/test.descr"
 	output := "test_data/parameters/test.proto"
 
