@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/LorenzHW/gnostic-protoc-generator.svg?branch=master)](https://travis-ci.com/LorenzHW/gnostic-protoc-generator)
+
 # gnostic Protos Generator Plugin
 [GSoC 2019 project](https://summerofcode.withgoogle.com/projects/#5244822191865856)
 
