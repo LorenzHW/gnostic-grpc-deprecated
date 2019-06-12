@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// gnostic_go_generator is a sample Gnostic plugin that generates Go
-// code that supports an API.
+// protoc_generator converts a FileDescriptorSet into protobuf specification (.protos)
 package protoc_generator
 
 import (
@@ -34,7 +33,7 @@ func RunProtocGenerator() {
 			err = proto.Unmarshal(model.Value, fileDescriptorSetModel)
 			if err == nil {
 				// Create the renderer.
-				renderer, err := NewServiceRenderer(fileDescriptorSetModel)
+				renderer, err := NewProtoRenderer(fileDescriptorSetModel)
 				// Run the renderer to generate files and add them to the response object.
 				err = renderer.Render(env.Response)
 				env.RespondAndExitIfError(err)
@@ -46,6 +45,6 @@ func RunProtocGenerator() {
 		}
 	}
 
-	err = errors.New("No generated code surface model is available.")
+	err = errors.New("no Model with the FileDescriptorSet data")
 	env.RespondAndExitIfError(err)
 }

@@ -26,7 +26,7 @@ func RunProtoGeneratorWithoutEnv(input string) ([]byte, error) {
 	fileDescriptorSetData, _ := ioutil.ReadFile(input)
 	fileDescr := &descriptor.FileDescriptorSet{}
 	proto.Unmarshal(fileDescriptorSetData, fileDescr)
-	renderer, err := NewServiceRenderer(fileDescr)
+	renderer, err := NewProtoRenderer(fileDescr)
 	protoData, err := renderer.RenderProto(fileDescr.File[0])
 	return protoData, err
 }

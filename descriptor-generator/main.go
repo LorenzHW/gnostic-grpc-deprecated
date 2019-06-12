@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// gnostic_protoc_generator is a sample Gnostic plugin that generates
-// protocol buffer specification code that supports an API.
+// descriptor_renderer generates a FileDescriptorSet from a gnostic output file.
 package descriptor_generator
 
 import (

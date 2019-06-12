@@ -27,8 +27,8 @@ type Renderer struct {
 	currFileDescriptor *descriptor.FileDescriptorProto
 }
 
-// NewServiceRenderer creates a renderer.
-func NewServiceRenderer(fileDescriptorSet *descriptor.FileDescriptorSet) (renderer *Renderer, err error) {
+// NewProtoRenderer creates a renderer.
+func NewProtoRenderer(fileDescriptorSet *descriptor.FileDescriptorSet) (renderer *Renderer, err error) {
 	renderer = &Renderer{}
 	renderer.fileDescriptorSet = *fileDescriptorSet
 	return renderer, nil

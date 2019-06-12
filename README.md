@@ -4,7 +4,7 @@
 [GSoC 2019 project](https://summerofcode.withgoogle.com/projects/#5244822191865856)
 
 ## High level overview:
-![alt text](https://drive.google.com/uc?export=view&id=1tqDvZLiXK40ISK_LgINQGsno9-MymRQP "Logo Title Text 1")
+![alt text](https://drive.google.com/uc?export=view&id=1tqDvZLiXK40ISK_LgINQGsno9-MymRQP "High Level Overview")
 
 ## How to use:
 
