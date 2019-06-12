@@ -1,0 +1,11 @@
+# Travis CI build file for OpenAPI Compiler, including Go and Swift plugins
+
+# Use Ubuntu 14.04
+dist: trusty
+
+sudo: false
+
+language: go
+
+script:
+  - go test ./...
