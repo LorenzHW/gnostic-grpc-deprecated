@@ -10,8 +10,8 @@ import (
 )
 
 func TestFileDescriptorGenerator(t *testing.T) {
-	input := "test_data/parameters/output.descr"
-	output := "test_data/parameters/output.proto"
+	input := "test_data/parameters/test.descr"
+	output := "test_data/parameters/test.proto"
 
 	protoData, err := RunProtoGeneratorWithoutEnv(input)
 	if err != nil {

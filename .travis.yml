@@ -8,4 +8,4 @@ sudo: false
 language: go
 
 script:
-  - go test ./...
+  - ./.travis-tests.sh
