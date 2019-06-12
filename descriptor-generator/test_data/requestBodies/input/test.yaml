@@ -1,0 +1,101 @@
+openapi: 3.0.0
+info:
+  title: Test API for GSoC project
+  version: "1.0.0"
+  description: |
+    This is a OpenAPI description for testing my GSoC project. The name of the path defines what
+    will be tested and the operation object will be set accordingly.
+    Structure of tests:
+    /testParameter*   --> To test everything related to path/query parameteres
+    /testResponse*    --> To test everything related to respones
+    /testRequestBody* --> To test everything related to request bodies
+    others            --> Other stuff
+
+paths:
+  ########################## REQUESTBODY ##########################
+  /testRequestBody:
+    get:
+      operationId: testRequestBody
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComponentExampleObjectPerson'
+      responses:
+        200:
+          description: success
+  /testRequestBodyReference:
+    get:
+      operationId: testRequestBodyReference
+      requestBody:
+        $ref: '#/components/requestBodies/ComponentExampleRequestBody'
+      responses:
+        200:
+          description: success
+
+#    ########################## OTHER ##########################
+#  /testAllPossibleOperations: # TODO: What about options/head/trace?
+#    get:
+#      operationId: testAllPossibleOperationsGET
+#      responses:
+#        200:
+#          description: success
+#    delete:
+#      operationId: testAllPossibleOperationsDELETE
+#      responses:
+#        200:
+#          description: success
+#    post:
+#      operationId: testAllPossibleOperationsPOST
+#      responses:
+#        200:
+#          description: success
+#    patch:
+#      operationId: testAllPossibleOperationsPATCH
+#      responses:
+#        200:
+#          description: success
+#    put:
+#      operationId: testAllPossibleOperationsPUT
+#      responses:
+#        200:
+#          description: success
+#  /testEmptyParameterEmptyResponse:
+#    get:
+#      operationId: testEmptyParameterEmptyResponse
+#      responses:
+#        200:
+#          description: success
+#    ########################## END ##########################
+components:
+  schemas:
+    ComponentExampleObjectPerson:
+      type: object
+      required:
+        - name
+        - photoUrls
+      properties:
+        id:
+          type: integer
+          format: int64
+        age:
+          type: integer
+          format: int64
+        name:
+          type: string
+          example: Peter
+        photoUrls:
+          type: array
+          xml:
+            name: photoUrl
+            wrapped: true
+          items:
+            type: string
+  requestBodies:
+    ComponentExampleRequestBody:
+      description: A JSON object containing information
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ComponentExampleObjectPerson'
