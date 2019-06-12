@@ -16,7 +16,6 @@ package protoc_generator
 
 import (
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	"log"
 	"strconv"
 	"unicode/utf8"
 )
@@ -159,14 +158,7 @@ func renderFields(f *LineWriter, fields []*descriptor.FieldDescriptorProto) {
 
 	for _, field := range fields {
 		protobufType := typeMapping[*field.Type]
-		if protobufType == "" {
-			log.Printf("INSIDE IF STATEMENT")
-			log.Printf(*field.Name)
-
-			if field.TypeName == nil {
-				log.Printf("IS NIL")
-			}
-
+		if protobufType == "" && field.TypeName != nil {
 			protobufType = *field.TypeName
 		}
 		f.WriteLine(labelMapping[*field.Label] + " " + protobufType + " " + *field.Name + " = " + strconv.Itoa(int(*field.Number)) + `;`)
