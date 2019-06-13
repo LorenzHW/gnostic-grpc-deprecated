@@ -52,10 +52,11 @@ func buildMessagesFromTypes(descr *descriptor.FileDescriptorProto, renderer *Ren
 			protoType := getProtoTypeForField(f)
 
 			fieldDescr := &descriptor.FieldDescriptorProto{
-				Name:   &f.Name,
-				Number: &ctr,
-				Label:  &label,
-				Type:   &protoType,
+				Name:     getName(f.Name),
+				Number:   &ctr,
+				Label:    &label,
+				Type:     &protoType,
+				TypeName: &f.Type,
 			}
 
 			switch f.Kind {
@@ -172,9 +173,22 @@ func getTypeMapping() map[string]descriptor.FieldDescriptorProto_Type {
 }
 
 func getProtoTypeForField(f *surface_v1.Field) descriptor.FieldDescriptorProto_Type {
-	fieldType := f.Format
-	if fieldType == "" {
-		fieldType = f.Type
+
+	res := typeMapping[f.Format]
+	if f.Format == "" {
+		res = typeMapping[f.Type]
+		if res == 0 {
+			// TODO: Could also be ENUM?
+			// Still have not found the type --> Is a message then
+			return descriptor.FieldDescriptorProto_TYPE_MESSAGE
+		}
 	}
-	return typeMapping[fieldType]
+	return res
+}
+
+func getName(name string) *string {
+	if name == "200" {
+		name = "ok"
+	}
+	return &name
 }

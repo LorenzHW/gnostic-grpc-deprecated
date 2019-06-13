@@ -70,11 +70,11 @@ message book {
 }
 
 message listBooksResponse {
- repeated  books = 1;
+ repeated book books = 1;
 }
 
 message listShelvesResponse {
- repeated  shelves = 1;
+ repeated shelf shelves = 1;
 }
 
 message shelf {
@@ -88,7 +88,7 @@ message error {
 }
 
 message ListShelvesResponses {
- listShelvesResponse 200 = 1;
+ listShelvesResponse ok = 1;
 }
 
 message CreateShelfParameters {
@@ -96,7 +96,7 @@ message CreateShelfParameters {
 }
 
 message CreateShelfResponses {
- shelf 200 = 1;
+ shelf ok = 1;
 }
 
 message GetShelfParameters {
@@ -104,7 +104,7 @@ message GetShelfParameters {
 }
 
 message GetShelfResponses {
- shelf 200 = 1;
+ shelf ok = 1;
  error default = 2;
 }
 
@@ -117,7 +117,7 @@ message ListBooksParameters {
 }
 
 message ListBooksResponses {
- listBooksResponse 200 = 1;
+ listBooksResponse ok = 1;
  error default = 2;
 }
 
@@ -127,7 +127,7 @@ message CreateBookParameters {
 }
 
 message CreateBookResponses {
- book 200 = 1;
+ book ok = 1;
  error default = 2;
 }
 
@@ -137,7 +137,7 @@ message GetBookParameters {
 }
 
 message GetBookResponses {
- book 200 = 1;
+ book ok = 1;
  error default = 2;
 }
 
