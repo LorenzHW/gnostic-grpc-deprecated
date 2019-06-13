@@ -47,31 +47,27 @@ func buildMessagesFromTypes(descr *descriptor.FileDescriptorProto, renderer *Ren
 
 		for i, f := range t.Fields {
 			ctr := int32(i + 1)
-
-			fieldDescr := descriptor.FieldDescriptorProto{}
-			fieldDescr.Name = &f.Name
-			fieldDescr.Number = &(ctr)
-
 			label := descriptor.FieldDescriptorProto_LABEL_OPTIONAL
-			fieldDescr.Label = &label
+			protoType := getProtoTypeForField(f)
 
-			// TODO: Use switch
-			if f.Kind == surface_v1.FieldKind_SCALAR {
-				protoType := getProtoTypeForField(f)
-				fieldDescr.Type = &protoType
-			} else if f.Kind == surface_v1.FieldKind_REFERENCE {
+			fieldDescr := &descriptor.FieldDescriptorProto{
+				Name:   &f.Name,
+				Number: &ctr,
+				Label:  &label,
+				Type:   &protoType,
+			}
+
+			switch f.Kind {
+			case surface_v1.FieldKind_REFERENCE:
 				// TODO: Could this also be enum?
-				protoType := descriptor.FieldDescriptorProto_TYPE_MESSAGE
-				fieldDescr.Type = &protoType
+				protoType = descriptor.FieldDescriptorProto_TYPE_MESSAGE
 				fieldDescr.TypeName = &f.Type
-			} else if f.Kind == surface_v1.FieldKind_ARRAY {
+			case surface_v1.FieldKind_ARRAY:
 				label = descriptor.FieldDescriptorProto_LABEL_REPEATED
-				protoType := getProtoTypeForField(f)
-				fieldDescr.Type = &protoType
-			} else if f.Kind == surface_v1.FieldKind_MAP {
+			case surface_v1.FieldKind_MAP:
 				// TODO
 			}
-			message.Field = append(message.Field, &fieldDescr)
+			message.Field = append(message.Field, fieldDescr)
 		}
 		descr.MessageType = append(descr.MessageType, &message)
 	}
@@ -87,12 +83,12 @@ func buildDependencies(descr *descriptor.FileDescriptorProto) {
 
 func buildServiceFromMethods(descr *descriptor.FileDescriptorProto, renderer *Renderer) {
 	methods := renderer.Model.Methods
-
-	service := &descriptor.ServiceDescriptorProto{}
-	descr.Service = []*descriptor.ServiceDescriptorProto{service}
-
 	serviceName := strings.Title(renderer.Package)
-	service.Name = &serviceName
+
+	service := &descriptor.ServiceDescriptorProto{
+		Name: &serviceName,
+	}
+	descr.Service = []*descriptor.ServiceDescriptorProto{service}
 
 	for _, method := range methods {
 		// TODO: How to transfer information about http transcoding annotations? Currently inside UninterpretedOption
@@ -106,13 +102,14 @@ func buildServiceFromMethods(descr *descriptor.FileDescriptorProto, renderer *Re
 		mOptionsDescr := descriptor.MethodOptions{}
 		mOptionsDescr.UninterpretedOption = []*descriptor.UninterpretedOption{&mUninterpretedOptions}
 
-		mDescr := descriptor.MethodDescriptorProto{}
-		mDescr.Name = &method.Name
-		mDescr.InputType = &method.ParametersTypeName
-		mDescr.OutputType = &method.ResponsesTypeName
-		mDescr.Options = &mOptionsDescr
+		mDescr := &descriptor.MethodDescriptorProto{
+			Name:       &method.Name,
+			InputType:  &method.ParametersTypeName,
+			OutputType: &method.ResponsesTypeName,
+			Options:    &mOptionsDescr,
+		}
 
-		service.Method = append(service.Method, &mDescr)
+		service.Method = append(service.Method, mDescr)
 	}
 }
 
