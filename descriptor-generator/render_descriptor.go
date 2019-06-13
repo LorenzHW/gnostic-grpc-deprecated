@@ -18,6 +18,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	surface_v1 "github.com/googleapis/gnostic/surface"
+	"google.golang.org/genproto/googleapis/api/annotations"
 	"strings"
 )
 
@@ -32,7 +33,7 @@ func (renderer *Renderer) RenderFileDescriptorSet() (res []byte, err error) {
 		File: []*descriptor.FileDescriptorProto{fileDescriptorProto},
 	}
 	buildDependencies(fileDescriptorProto)
-	buildServiceFromMethods(fileDescriptorProto, renderer)
+	err = buildServiceFromMethods(fileDescriptorProto, renderer)
 	buildMessagesFromTypes(fileDescriptorProto, renderer)
 	res, err = proto.Marshal(&fileDescrSet)
 	return res, err
@@ -81,7 +82,7 @@ func buildDependencies(descr *descriptor.FileDescriptorProto) {
 	}
 }
 
-func buildServiceFromMethods(descr *descriptor.FileDescriptorProto, renderer *Renderer) {
+func buildServiceFromMethods(descr *descriptor.FileDescriptorProto, renderer *Renderer) (err error) {
 	methods := renderer.Model.Methods
 	serviceName := strings.Title(renderer.Package)
 
@@ -91,26 +92,62 @@ func buildServiceFromMethods(descr *descriptor.FileDescriptorProto, renderer *Re
 	descr.Service = []*descriptor.ServiceDescriptorProto{service}
 
 	for _, method := range methods {
-		// TODO: How to transfer information about http transcoding annotations? Currently inside UninterpretedOption
 		// TODO: ClientStreaming
 		// TODO: ServerStreaming
 
-		mUninterpretedOptions := descriptor.UninterpretedOption{}
-		identIfierValue := method.Path + ";" + method.Method
-		mUninterpretedOptions.IdentifierValue = &identIfierValue
-
-		mOptionsDescr := descriptor.MethodOptions{}
-		mOptionsDescr.UninterpretedOption = []*descriptor.UninterpretedOption{&mUninterpretedOptions}
+		mOptionsDescr := &descriptor.MethodOptions{}
+		httpRule := getHttpRuleForMethod(method)
+		if err := proto.SetExtension(mOptionsDescr, annotations.E_Http, &httpRule); err != nil {
+			return err
+		}
 
 		mDescr := &descriptor.MethodDescriptorProto{
 			Name:       &method.Name,
 			InputType:  &method.ParametersTypeName,
 			OutputType: &method.ResponsesTypeName,
-			Options:    &mOptionsDescr,
+			Options:    mOptionsDescr,
 		}
 
 		service.Method = append(service.Method, mDescr)
 	}
+	return nil
+}
+
+func getHttpRuleForMethod(method *surface_v1.Method) annotations.HttpRule {
+	var httpRule annotations.HttpRule
+	switch method.Method {
+	case "GET":
+		httpRule = annotations.HttpRule{
+			Pattern: &annotations.HttpRule_Get{
+				Get: method.Path,
+			},
+		}
+	case "POST":
+		httpRule = annotations.HttpRule{
+			Pattern: &annotations.HttpRule_Post{
+				Post: method.Path,
+			},
+		}
+	case "PUT":
+		httpRule = annotations.HttpRule{
+			Pattern: &annotations.HttpRule_Put{
+				Put: method.Path,
+			},
+		}
+	case "PATCH":
+		httpRule = annotations.HttpRule{
+			Pattern: &annotations.HttpRule_Patch{
+				Patch: method.Path,
+			},
+		}
+	case "DELETE":
+		httpRule = annotations.HttpRule{
+			Pattern: &annotations.HttpRule_Delete{
+				Delete: method.Path,
+			},
+		}
+	}
+	return httpRule
 }
 
 func getTypeMapping() map[string]descriptor.FieldDescriptorProto_Type {

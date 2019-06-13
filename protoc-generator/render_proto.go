@@ -15,7 +15,10 @@
 package protoc_generator
 
 import (
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/genproto/googleapis/api/annotations"
+	"reflect"
 	"strconv"
 	"unicode/utf8"
 )
@@ -72,7 +75,6 @@ func renderDependencies(f *LineWriter, renderer *Renderer) {
 	f.WriteLine(``)
 	for _, dependency := range dependencies {
 		f.WriteLine(`import "` + dependency + `";`)
-		f.WriteLine(``)
 	}
 }
 
@@ -102,8 +104,35 @@ func renderRPCsignature(f *LineWriter, method *descriptor.MethodDescriptorProto)
 	f.WriteLine(`  rpc ` + *method.Name + ` (` + *method.InputType + `) ` + `returns` + ` (` + *method.OutputType + `) {`)
 }
 
-func renderOptions(f *LineWriter, options *descriptor.MethodOptions) {
-	// TODO: Problem: We don't have any information about HTTP transcoding
+func renderOptions(f *LineWriter, options *descriptor.MethodOptions) (eHttp interface{}, err error) {
+	eHttp, err = proto.GetExtension(options, annotations.E_Http)
+	if err != nil {
+		return nil, err
+	}
+	method, path := getMethodAndPathForHttpExtension(eHttp)
+	f.WriteLine(`    option (google.api.http) = {`)
+	f.WriteLine(`      ` + method + `: "` + path + `"`)
+	f.WriteLine(`    };`)
+	return eHttp, err
+}
+
+func getMethodAndPathForHttpExtension(eHttp interface{}) (string, string) {
+	pattern := eHttp.(*annotations.HttpRule).Pattern
+	patternType := reflect.TypeOf(pattern).String()
+
+	switch patternType {
+	case "*annotations.HttpRule_Get":
+		return "get", pattern.(*annotations.HttpRule_Get).Get
+	case "*annotations.HttpRule_Post":
+		return "post", pattern.(*annotations.HttpRule_Post).Post
+	case "*annotations.HttpRule_Put":
+		return "put", pattern.(*annotations.HttpRule_Put).Put
+	case "*annotations.HttpRule_Patch":
+		return "patch", pattern.(*annotations.HttpRule_Patch).Patch
+	case "*annotations.HttpRule_Delete":
+		return "delete", pattern.(*annotations.HttpRule_Delete).Delete
+	}
+	return "", ""
 }
 
 func renderMessages(f *LineWriter, messages []*descriptor.DescriptorProto) {
@@ -187,4 +216,5 @@ func createLabelMapping() map[descriptor.FieldDescriptorProto_Label]string {
 
 //TODO: Flatten URL Path parameters (query params don't need to be flattened!)
 
-//TODO: Take a look a look at comments from Noah
+//TODO: Use bookstore example (same as gnostic-go-generator)
+//TODO: Take a look at this reflect package noah mentioned (to generate protos from filedescriptor input)
