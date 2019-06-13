@@ -3,22 +3,146 @@
 syntax = "proto3";
 
 import "google/api/annotations.proto";
-
 import "google/protobuf/empty.proto";
-
 package output;
 
 service Output {
-  rpc TestParameterQuery (TestParameterQueryParameters) returns (google.protobuf.Empty) {
+  rpc ListShelves (google.protobuf.Empty) returns (ListShelvesResponses) {
+    option (google.api.http) = {
+      get: "/shelves"
+    };
+  }
+
+  rpc CreateShelf (CreateShelfParameters) returns (CreateShelfResponses) {
+    option (google.api.http) = {
+      post: "/shelves"
+    };
+  }
+
+  rpc DeleteShelves (google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/shelves"
+    };
+  }
+
+  rpc GetShelf (GetShelfParameters) returns (GetShelfResponses) {
+    option (google.api.http) = {
+      get: "/shelves/{shelf}"
+    };
+  }
+
+  rpc DeleteShelf (DeleteShelfParameters) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/shelves/{shelf}"
+    };
+  }
+
+  rpc ListBooks (ListBooksParameters) returns (ListBooksResponses) {
+    option (google.api.http) = {
+      get: "/shelves/{shelf}/books"
+    };
+  }
+
+  rpc CreateBook (CreateBookParameters) returns (CreateBookResponses) {
+    option (google.api.http) = {
+      post: "/shelves/{shelf}/books"
+    };
+  }
+
+  rpc GetBook (GetBookParameters) returns (GetBookResponses) {
+    option (google.api.http) = {
+      get: "/shelves/{shelf}/books/{book}"
+    };
+  }
+
+  rpc DeleteBook (DeleteBookParameters) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/shelves/{shelf}/books/{book}"
+    };
   }
 
 }
 
-message ComponentExampleParameter {
- int64 param1 = 1;
+message book {
+ string author = 1;
+ string name = 2;
+ string title = 3;
 }
 
-message TestParameterQueryParameters {
- int32 param1 = 1;
+message listBooksResponse {
+ repeated  books = 1;
+}
+
+message listShelvesResponse {
+ repeated  shelves = 1;
+}
+
+message shelf {
+ string name = 1;
+ string theme = 2;
+}
+
+message error {
+ int32 code = 1;
+ string message = 2;
+}
+
+message ListShelvesResponses {
+ listShelvesResponse 200 = 1;
+}
+
+message CreateShelfParameters {
+ shelf shelf = 1;
+}
+
+message CreateShelfResponses {
+ shelf 200 = 1;
+}
+
+message GetShelfParameters {
+ int64 shelf = 1;
+}
+
+message GetShelfResponses {
+ shelf 200 = 1;
+ error default = 2;
+}
+
+message DeleteShelfParameters {
+ int64 shelf = 1;
+}
+
+message ListBooksParameters {
+ int64 shelf = 1;
+}
+
+message ListBooksResponses {
+ listBooksResponse 200 = 1;
+ error default = 2;
+}
+
+message CreateBookParameters {
+ int64 shelf = 1;
+ book book = 2;
+}
+
+message CreateBookResponses {
+ book 200 = 1;
+ error default = 2;
+}
+
+message GetBookParameters {
+ int64 shelf = 1;
+ int64 book = 2;
+}
+
+message GetBookResponses {
+ book 200 = 1;
+ error default = 2;
+}
+
+message DeleteBookParameters {
+ int64 shelf = 1;
+ int64 book = 2;
 }
 

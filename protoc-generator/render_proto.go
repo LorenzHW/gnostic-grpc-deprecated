@@ -29,7 +29,6 @@ func (renderer *Renderer) RenderProto(fileDescrProto *descriptor.FileDescriptorP
 	renderer.currFileDescriptor = fileDescrProto
 
 	f := NewLineWriter()
-	//removePackageFromNames(renderer)
 
 	// TODO: print license
 	f.WriteLine("// GENERATED FILE: DO NOT EDIT!")
