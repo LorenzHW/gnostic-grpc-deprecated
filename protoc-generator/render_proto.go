@@ -20,7 +20,6 @@ import (
 	"google.golang.org/genproto/googleapis/api/annotations"
 	"reflect"
 	"strconv"
-	"unicode/utf8"
 )
 
 var descriptorTypeToProtoType = createMapping()
@@ -40,33 +39,15 @@ func (renderer *Renderer) RenderProto(fileDescrProto *descriptor.FileDescriptorP
 	f.WriteLine(`package ` + *fileDescrProto.Package + `;`)
 	f.WriteLine(``)
 
-	renderService(f, renderer.currFileDescriptor.Service)
+	err := renderService(f, renderer.currFileDescriptor.Service)
+	if err != nil {
+		return nil, err
+	}
+
 	renderMessages(f, renderer.currFileDescriptor.MessageType)
 	renderEnums(f, renderer.currFileDescriptor.EnumType)
 
-	return f.Bytes(), nil
-}
-
-func removePackageFromNames(renderer *Renderer) {
-	numberOfCharsToRemove := utf8.RuneCountInString(*renderer.currFileDescriptor.Package) + 2
-
-	for _, service := range renderer.currFileDescriptor.Service {
-		if service != nil {
-			for _, method := range service.Method {
-				*method.InputType = (*method.InputType)[numberOfCharsToRemove:]
-				*method.OutputType = (*method.OutputType)[numberOfCharsToRemove:]
-			}
-		}
-	}
-
-	for _, message := range renderer.currFileDescriptor.MessageType {
-		for _, field := range message.Field {
-			if field.TypeName != nil {
-				*field.TypeName = (*field.TypeName)[numberOfCharsToRemove:]
-			}
-		}
-	}
-
+	return f.Bytes(), err
 }
 
 func renderDependencies(f *LineWriter, renderer *Renderer) {
@@ -78,18 +59,23 @@ func renderDependencies(f *LineWriter, renderer *Renderer) {
 	}
 }
 
-func renderService(f *LineWriter, services []*descriptor.ServiceDescriptorProto) {
+func renderService(f *LineWriter, services []*descriptor.ServiceDescriptorProto) (err error) {
 	for _, service := range services {
 		f.WriteLine(`service ` + *service.Name + ` {`)
 		for _, method := range service.Method {
 			renderRPCsignature(f, method)
-			renderOptions(f, method.Options)
+			err = renderOptions(f, method.Options)
+			if err != nil {
+				return err
+			}
+
 			f.WriteLine(`  }`) // Closing bracket of method
 			f.WriteLine(``)
 		}
 		f.WriteLine(`}`) // Closing bracket of RPC service
 		f.WriteLine(``)
 	}
+	return err
 }
 
 func renderRPCsignature(f *LineWriter, method *descriptor.MethodDescriptorProto) {
@@ -104,16 +90,16 @@ func renderRPCsignature(f *LineWriter, method *descriptor.MethodDescriptorProto)
 	f.WriteLine(`  rpc ` + *method.Name + ` (` + *method.InputType + `) ` + `returns` + ` (` + *method.OutputType + `) {`)
 }
 
-func renderOptions(f *LineWriter, options *descriptor.MethodOptions) (eHttp interface{}, err error) {
-	eHttp, err = proto.GetExtension(options, annotations.E_Http)
+func renderOptions(f *LineWriter, options *descriptor.MethodOptions) (err error) {
+	eHttp, err := proto.GetExtension(options, annotations.E_Http)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	method, path := getMethodAndPathForHttpExtension(eHttp)
 	f.WriteLine(`    option (google.api.http) = {`)
 	f.WriteLine(`      ` + method + `: "` + path + `"`)
 	f.WriteLine(`    };`)
-	return eHttp, err
+	return err
 }
 
 func getMethodAndPathForHttpExtension(eHttp interface{}) (string, string) {
