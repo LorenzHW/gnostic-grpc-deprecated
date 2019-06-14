@@ -25,9 +25,12 @@ import (
 var typeMapping = getTypeMapping()
 
 func (renderer *Renderer) RenderFileDescriptorSet() (res []byte, err error) {
+	syntax := "proto3"
+
 	fileDescriptorProto := &descriptor.FileDescriptorProto{
 		Name:    &renderer.Package,
 		Package: &renderer.Package,
+		Syntax:  &syntax,
 	}
 	fileDescrSet := descriptor.FileDescriptorSet{
 		File: []*descriptor.FileDescriptorProto{fileDescriptorProto},
