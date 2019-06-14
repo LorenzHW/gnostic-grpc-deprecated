@@ -14,9 +14,9 @@ To run this plugin run following commands inside this directory:
     
 To run the descriptor generator:
     
-    ./gnostic-protoc-generator -input example/input/test.pb -output example/output/
+    ./gnostic-protoc-generator -input example/input/bookstore.pb -output example/output/
 
-This generator takes in a binary format of an OpenAPI specification (`texample/input/test.pb`
+This generator takes in a binary format of an OpenAPI specification (`texample/input/bookstore.pb`
 created with gnostic) and creates a file descriptor set `example/output/output.descr`.
 
 
