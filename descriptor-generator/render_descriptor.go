@@ -15,8 +15,9 @@
 package descriptor_generator
 
 import (
+	"errors"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	surface_v1 "github.com/googleapis/gnostic/surface"
 	"google.golang.org/genproto/googleapis/api/annotations"
 	"strings"
@@ -27,85 +28,114 @@ var typeMapping = getTypeMapping()
 func (renderer *Renderer) RenderFileDescriptorSet() (res []byte, err error) {
 	syntax := "proto3"
 
-	fileDescriptorProto := &descriptor.FileDescriptorProto{
+	fileDescriptorProto := &dpb.FileDescriptorProto{
 		Name:    &renderer.Package,
 		Package: &renderer.Package,
 		Syntax:  &syntax,
 	}
-	fileDescrSet := descriptor.FileDescriptorSet{
-		File: []*descriptor.FileDescriptorProto{fileDescriptorProto},
+	fileDescrSet := dpb.FileDescriptorSet{
+		File: []*dpb.FileDescriptorProto{fileDescriptorProto},
 	}
+
 	buildDependencies(fileDescriptorProto)
 	err = buildServiceFromMethods(fileDescriptorProto, renderer)
-	buildMessagesFromTypes(fileDescriptorProto, renderer)
+	if err != nil {
+		return nil, err
+	}
+
+	err = buildMessagesFromTypes(fileDescriptorProto, renderer)
+	if err != nil {
+		return nil, err
+	}
+
 	res, err = proto.Marshal(&fileDescrSet)
+	if err != nil {
+		return nil, err
+	}
 	return res, err
 }
 
-func buildMessagesFromTypes(descr *descriptor.FileDescriptorProto, renderer *Renderer) {
+func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) (err error) {
 	types := renderer.Model.Types
 
 	for _, t := range types {
-		message := descriptor.DescriptorProto{}
-		message.Name = &t.Name
+		messageName := strings.Title(t.Name)
+
+		message := dpb.DescriptorProto{
+			Name: &messageName,
+		}
 
 		for i, f := range t.Fields {
 			ctr := int32(i + 1)
-			label := descriptor.FieldDescriptorProto_LABEL_OPTIONAL
-			protoType := getProtoTypeForField(f)
+			label := getLabelForField(f)
+			name := getNameForField(f)
+			typeName := getTypeNameForField(f)
 
-			fieldDescr := &descriptor.FieldDescriptorProto{
-				Name:     getName(f.Name),
+			protoType, err := getProtoTypeForField(f)
+			if err != nil {
+				return err
+			}
+
+			fieldDescr := &dpb.FieldDescriptorProto{
+				Name:     name,
 				Number:   &ctr,
-				Label:    &label,
-				Type:     &protoType,
-				TypeName: &f.Type,
+				Label:    label,
+				Type:     protoType,
+				TypeName: typeName,
 			}
 
-			switch f.Kind {
-			case surface_v1.FieldKind_REFERENCE:
-				// TODO: Could this also be enum?
-				protoType = descriptor.FieldDescriptorProto_TYPE_MESSAGE
-				fieldDescr.TypeName = &f.Type
-			case surface_v1.FieldKind_ARRAY:
-				label = descriptor.FieldDescriptorProto_LABEL_REPEATED
-			case surface_v1.FieldKind_MAP:
-				// TODO
-			}
 			message.Field = append(message.Field, fieldDescr)
 		}
 		descr.MessageType = append(descr.MessageType, &message)
 	}
+	return nil
 }
 
-func buildDependencies(descr *descriptor.FileDescriptorProto) {
-	dependencies := []string{"google/api/annotations.proto", "google/protobuf/empty.proto"}
+func getLabelForField(f *surface_v1.Field) *dpb.FieldDescriptorProto_Label {
+	res := dpb.FieldDescriptorProto_LABEL_OPTIONAL
+	if f.Kind == surface_v1.FieldKind_ARRAY {
+		res = dpb.FieldDescriptorProto_LABEL_REPEATED
+	}
+	return &res
+}
+
+func buildDependencies(descr *dpb.FileDescriptorProto) {
+	// TODO: google/api/annotations.proto does not work for now with proto_generator
+	//dependencies := []string{"google/api/annotations.proto", "google/protobuf/empty.proto"}
+	dependencies := []string{"google/protobuf/empty.proto"}
 
 	for _, dep := range dependencies {
 		descr.Dependency = append(descr.Dependency, dep)
 	}
 }
 
-func buildServiceFromMethods(descr *descriptor.FileDescriptorProto, renderer *Renderer) (err error) {
+func buildServiceFromMethods(descr *dpb.FileDescriptorProto, renderer *Renderer) (err error) {
 	methods := renderer.Model.Methods
 	serviceName := strings.Title(renderer.Package)
 
-	service := &descriptor.ServiceDescriptorProto{
+	service := &dpb.ServiceDescriptorProto{
 		Name: &serviceName,
 	}
-	descr.Service = []*descriptor.ServiceDescriptorProto{service}
+	descr.Service = []*dpb.ServiceDescriptorProto{service}
 
 	for _, method := range methods {
 		// TODO: ClientStreaming
 		// TODO: ServerStreaming
 
-		mOptionsDescr := &descriptor.MethodOptions{}
+		mOptionsDescr := &dpb.MethodOptions{}
 		httpRule := getHttpRuleForMethod(method)
 		if err := proto.SetExtension(mOptionsDescr, annotations.E_Http, &httpRule); err != nil {
 			return err
 		}
 
-		mDescr := &descriptor.MethodDescriptorProto{
+		if method.ParametersTypeName == "" {
+			method.ParametersTypeName = "google.protobuf.Empty"
+		}
+		if method.ResponsesTypeName == "" {
+			method.ResponsesTypeName = "google.protobuf.Empty"
+		}
+
+		mDescr := &dpb.MethodDescriptorProto{
 			Name:       &method.Name,
 			InputType:  &method.ParametersTypeName,
 			OutputType: &method.ResponsesTypeName,
@@ -154,44 +184,65 @@ func getHttpRuleForMethod(method *surface_v1.Method) annotations.HttpRule {
 	return httpRule
 }
 
-func getTypeMapping() map[string]descriptor.FieldDescriptorProto_Type {
-	typeMapping := make(map[string]descriptor.FieldDescriptorProto_Type)
-	typeMapping["double"] = descriptor.FieldDescriptorProto_TYPE_DOUBLE
-	typeMapping["float"] = descriptor.FieldDescriptorProto_TYPE_FLOAT
-	typeMapping["int64"] = descriptor.FieldDescriptorProto_TYPE_INT64
-	typeMapping["uint64"] = descriptor.FieldDescriptorProto_TYPE_UINT64
-	typeMapping["int32"] = descriptor.FieldDescriptorProto_TYPE_INT32
-	typeMapping["fixed64"] = descriptor.FieldDescriptorProto_TYPE_FIXED64
-
-	typeMapping["fixed32"] = descriptor.FieldDescriptorProto_TYPE_FIXED32
-	typeMapping["bool"] = descriptor.FieldDescriptorProto_TYPE_BOOL
-	typeMapping["string"] = descriptor.FieldDescriptorProto_TYPE_STRING
-	typeMapping["bytes"] = descriptor.FieldDescriptorProto_TYPE_BYTES
-	typeMapping["uint32"] = descriptor.FieldDescriptorProto_TYPE_UINT32
-	typeMapping["sfixed32"] = descriptor.FieldDescriptorProto_TYPE_SFIXED32
-	typeMapping["sfixed64"] = descriptor.FieldDescriptorProto_TYPE_SFIXED64
-	typeMapping["sint32"] = descriptor.FieldDescriptorProto_TYPE_SINT32
-	typeMapping["sint64"] = descriptor.FieldDescriptorProto_TYPE_SINT64
-	return typeMapping
-}
-
-func getProtoTypeForField(f *surface_v1.Field) descriptor.FieldDescriptorProto_Type {
-
-	res := typeMapping[f.Format]
-	if f.Format == "" {
-		res = typeMapping[f.Type]
-		if res == 0 {
-			// TODO: Could also be ENUM?
-			// Still have not found the type --> Is a message then
-			return descriptor.FieldDescriptorProto_TYPE_MESSAGE
-		}
+func getProtoTypeForField(f *surface_v1.Field) (*dpb.FieldDescriptorProto_Type, error) {
+	if protoType, ok := typeMapping[f.Format]; ok {
+		return &protoType, nil
 	}
-	return res
+
+	if protoType, ok := typeMapping[f.Type]; ok {
+		return &protoType, nil
+	}
+
+	if f.Kind == surface_v1.FieldKind_REFERENCE || f.Kind == surface_v1.FieldKind_ARRAY {
+		// We got either an array of references or a single reference. How do we know it is not an
+		// array of scalar values? Because then one of the earlier if-statements is true.
+		// We got a reference to another object --> This is represented as message inside protobuf
+		protoType := dpb.FieldDescriptorProto_TYPE_MESSAGE // TODO: Could also be ENUM?
+		return &protoType, nil
+	}
+
+	return nil, errors.New("Unable to find a protobuf type for the surface model type ")
+
 }
 
-func getName(name string) *string {
+// Returns the name of the protobuf field. The convention inside .proto is, that all field names are
+// lowercase and all messages and types are capitalized if they are not scalar types (int64, string, ...).
+func getNameForField(f *surface_v1.Field) *string {
+	name := strings.ToLower(f.Name)
+
 	if name == "200" {
 		name = "ok"
 	}
 	return &name
+}
+
+// Returns the type of the reference. The convention inside .proto is, that all field names are
+// lowercase and all messages and types are capitalized if they are not scalar types (int64, string, ...).
+func getTypeNameForField(f *surface_v1.Field) *string {
+	if f.Kind == surface_v1.FieldKind_REFERENCE {
+		typeName := strings.Title(f.Type)
+		return &typeName
+	}
+	return nil
+}
+
+func getTypeMapping() map[string]dpb.FieldDescriptorProto_Type {
+	typeMapping := make(map[string]dpb.FieldDescriptorProto_Type)
+	typeMapping["double"] = dpb.FieldDescriptorProto_TYPE_DOUBLE
+	typeMapping["float"] = dpb.FieldDescriptorProto_TYPE_FLOAT
+	typeMapping["int64"] = dpb.FieldDescriptorProto_TYPE_INT64
+	typeMapping["uint64"] = dpb.FieldDescriptorProto_TYPE_UINT64
+	typeMapping["int32"] = dpb.FieldDescriptorProto_TYPE_INT32
+	typeMapping["fixed64"] = dpb.FieldDescriptorProto_TYPE_FIXED64
+
+	typeMapping["fixed32"] = dpb.FieldDescriptorProto_TYPE_FIXED32
+	typeMapping["bool"] = dpb.FieldDescriptorProto_TYPE_BOOL
+	typeMapping["string"] = dpb.FieldDescriptorProto_TYPE_STRING
+	typeMapping["bytes"] = dpb.FieldDescriptorProto_TYPE_BYTES
+	typeMapping["uint32"] = dpb.FieldDescriptorProto_TYPE_UINT32
+	typeMapping["sfixed32"] = dpb.FieldDescriptorProto_TYPE_SFIXED32
+	typeMapping["sfixed64"] = dpb.FieldDescriptorProto_TYPE_SFIXED64
+	typeMapping["sint32"] = dpb.FieldDescriptorProto_TYPE_SINT32
+	typeMapping["sint64"] = dpb.FieldDescriptorProto_TYPE_SINT64
+	return typeMapping
 }
