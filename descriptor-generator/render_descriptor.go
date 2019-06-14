@@ -23,7 +23,9 @@ import (
 	"strings"
 )
 
-var typeMapping = getTypeMapping()
+var protoBufTypes = getProtobufTypes()
+var openAPITypesToProtoBuf = getOpenAPITypesToProtoBufTypes()
+var openAPIScalarTypes = getOpenAPIScalarTypes()
 
 func (renderer *Renderer) RenderFileDescriptorSet() (res []byte, err error) {
 	syntax := "proto3"
@@ -185,18 +187,20 @@ func getHttpRuleForMethod(method *surface_v1.Method) annotations.HttpRule {
 }
 
 func getProtoTypeForField(f *surface_v1.Field) (*dpb.FieldDescriptorProto_Type, error) {
-	if protoType, ok := typeMapping[f.Format]; ok {
+	if protoType, ok := protoBufTypes[f.Format]; ok {
 		return &protoType, nil
 	}
 
-	if protoType, ok := typeMapping[f.Type]; ok {
+	if protoType, ok := protoBufTypes[f.Type]; ok {
 		return &protoType, nil
 	}
 
-	if f.Kind == surface_v1.FieldKind_REFERENCE || f.Kind == surface_v1.FieldKind_ARRAY {
-		// We got either an array of references or a single reference. How do we know it is not an
-		// array of scalar values? Because then one of the earlier if-statements is true.
-		// We got a reference to another object --> This is represented as message inside protobuf
+	if protoType, ok := openAPITypesToProtoBuf[f.Type]; ok {
+		return &protoType, nil
+	}
+
+	if f.Kind == surface_v1.FieldKind_REFERENCE || (f.Kind == surface_v1.FieldKind_ARRAY && !openAPIScalarTypes[f.Type]) {
+		// It is either a reference or an array of non scalar-types.
 		protoType := dpb.FieldDescriptorProto_TYPE_MESSAGE // TODO: Could also be ENUM?
 		return &protoType, nil
 	}
@@ -219,14 +223,16 @@ func getNameForField(f *surface_v1.Field) *string {
 // Returns the type of the reference. The convention inside .proto is, that all field names are
 // lowercase and all messages and types are capitalized if they are not scalar types (int64, string, ...).
 func getTypeNameForField(f *surface_v1.Field) *string {
-	if f.Kind == surface_v1.FieldKind_REFERENCE {
+	if f.Kind == surface_v1.FieldKind_REFERENCE || (f.Kind == surface_v1.FieldKind_ARRAY && !openAPIScalarTypes[f.Type]) {
+		// It is either a reference or an array of non scalar-types.
 		typeName := strings.Title(f.Type)
 		return &typeName
 	}
+
 	return nil
 }
 
-func getTypeMapping() map[string]dpb.FieldDescriptorProto_Type {
+func getProtobufTypes() map[string]dpb.FieldDescriptorProto_Type {
 	typeMapping := make(map[string]dpb.FieldDescriptorProto_Type)
 	typeMapping["double"] = dpb.FieldDescriptorProto_TYPE_DOUBLE
 	typeMapping["float"] = dpb.FieldDescriptorProto_TYPE_FLOAT
@@ -245,4 +251,24 @@ func getTypeMapping() map[string]dpb.FieldDescriptorProto_Type {
 	typeMapping["sint32"] = dpb.FieldDescriptorProto_TYPE_SINT32
 	typeMapping["sint64"] = dpb.FieldDescriptorProto_TYPE_SINT64
 	return typeMapping
+}
+
+func getOpenAPITypesToProtoBufTypes() map[string]dpb.FieldDescriptorProto_Type {
+	return map[string]dpb.FieldDescriptorProto_Type{
+		"string":  dpb.FieldDescriptorProto_TYPE_STRING,
+		"integer": dpb.FieldDescriptorProto_TYPE_INT32,
+		"number":  dpb.FieldDescriptorProto_TYPE_FLOAT,
+		"boolean": dpb.FieldDescriptorProto_TYPE_BOOL,
+		"object":  dpb.FieldDescriptorProto_TYPE_MESSAGE,
+		// Array not set: could be either scalar or non-scalar value.
+	}
+}
+
+func getOpenAPIScalarTypes() map[string]bool {
+	return map[string]bool{
+		"string":  true,
+		"integer": true,
+		"number":  true,
+		"boolean": true,
+	}
 }
