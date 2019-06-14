@@ -40,7 +40,7 @@ func (renderer *Renderer) Render(response *plugins.Response) (err error) {
 	for _, fileDescriptor := range renderer.fileDescriptorSet.File {
 		file := &plugins.File{}
 		file.Name = *fileDescriptor.Name + ".proto"
-		file.Data, err = renderer.RenderProto(fileDescriptor)
+		file.Data, err = renderer.RenderProto(&renderer.fileDescriptorSet)
 		if err != nil {
 			response.Errors = append(response.Errors, fmt.Sprintf("ERROR %v", err))
 		}
