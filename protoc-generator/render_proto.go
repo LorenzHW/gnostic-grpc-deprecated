@@ -53,16 +53,17 @@ func buildDependenciesForProtoReflect(fdSet *dpb.FileDescriptorSet) {
 	http := annotations.Http{}
 	fd2, _ := descriptor.ForMessage(&http)
 
+	extensionName := "http"
 	n := "google/api/annotations.proto"
-	label := dpb.FieldDescriptorProto_LABEL_OPTIONAL
+	l := dpb.FieldDescriptorProto_LABEL_OPTIONAL
 	t := dpb.FieldDescriptorProto_TYPE_MESSAGE
 	tName := "google.api.HttpRule"
 	extendee := ".google.protobuf.MethodOptions"
 
 	httpExtension := &dpb.FieldDescriptorProto{
-		Name:     &annotations.E_Http.Name,
+		Name:     &extensionName,
 		Number:   &annotations.E_Http.Field,
-		Label:    &label,
+		Label:    &l,
 		Type:     &t,
 		TypeName: &tName,
 		Extendee: &extendee,

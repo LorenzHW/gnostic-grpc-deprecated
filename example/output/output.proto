@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package output;
 
+import "google/api/annotations.proto";
+
 import "google/protobuf/empty.proto";
 
 message Book {
@@ -99,22 +101,40 @@ message DeleteBookParameters {
 }
 
 service Output {
-    rpc ListShelves (google.protobuf.Empty) returns (ListShelvesResponses);
+    rpc ListShelves (google.protobuf.Empty) returns (ListShelvesResponses) {
+        option (google.api.http) = { get:"/shelves"  };
+    }
 
-    rpc CreateShelf (CreateShelfParameters) returns (CreateShelfResponses);
+    rpc CreateShelf (CreateShelfParameters) returns (CreateShelfResponses) {
+        option (google.api.http) = { post:"/shelves"  };
+    }
 
-    rpc DeleteShelves (google.protobuf.Empty) returns (google.protobuf.Empty);
+    rpc DeleteShelves (google.protobuf.Empty) returns (google.protobuf.Empty) {
+        option (google.api.http) = { delete:"/shelves"  };
+    }
 
-    rpc GetShelf (GetShelfParameters) returns (GetShelfResponses);
+    rpc GetShelf (GetShelfParameters) returns (GetShelfResponses) {
+        option (google.api.http) = { get:"/shelves/{shelf}"  };
+    }
 
-    rpc DeleteShelf (DeleteShelfParameters) returns (google.protobuf.Empty);
+    rpc DeleteShelf (DeleteShelfParameters) returns (google.protobuf.Empty) {
+        option (google.api.http) = { delete:"/shelves/{shelf}"  };
+    }
 
-    rpc ListBooks (ListBooksParameters) returns (ListBooksResponses);
+    rpc ListBooks (ListBooksParameters) returns (ListBooksResponses) {
+        option (google.api.http) = { get:"/shelves/{shelf}/books"  };
+    }
 
-    rpc CreateBook (CreateBookParameters) returns (CreateBookResponses);
+    rpc CreateBook (CreateBookParameters) returns (CreateBookResponses) {
+        option (google.api.http) = { post:"/shelves/{shelf}/books"  };
+    }
 
-    rpc GetBook (GetBookParameters) returns (GetBookResponses);
+    rpc GetBook (GetBookParameters) returns (GetBookResponses) {
+        option (google.api.http) = { get:"/shelves/{shelf}/books/{book}"  };
+    }
 
-    rpc DeleteBook (DeleteBookParameters) returns (google.protobuf.Empty);
+    rpc DeleteBook (DeleteBookParameters) returns (google.protobuf.Empty) {
+        option (google.api.http) = { delete:"/shelves/{shelf}/books/{book}"  };
+    }
 }
 
