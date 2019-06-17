@@ -16,7 +16,7 @@ To run the descriptor generator:
     
     ./gnostic-protoc-generator -input example/input/bookstore.pb -output example/output/
 
-This generator takes in a binary format of an OpenAPI specification (`texample/input/bookstore.pb`
+This generator takes in a binary format of an OpenAPI specification (`example/input/bookstore.pb`
 created with gnostic) and creates a file descriptor set `example/output/output.descr`.
 
 
