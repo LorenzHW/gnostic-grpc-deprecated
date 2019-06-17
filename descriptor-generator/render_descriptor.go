@@ -102,9 +102,7 @@ func getLabelForField(f *surface_v1.Field) *dpb.FieldDescriptorProto_Label {
 }
 
 func buildDependencies(descr *dpb.FileDescriptorProto) {
-	// TODO: google/api/annotations.proto does not work for now with proto_generator
-	//dependencies := []string{"google/api/annotations.proto", "google/protobuf/empty.proto"}
-	dependencies := []string{"google/protobuf/empty.proto"}
+	dependencies := []string{"google/api/annotations.proto", "google/protobuf/empty.proto"}
 
 	for _, dep := range dependencies {
 		descr.Dependency = append(descr.Dependency, dep)

@@ -20,38 +20,66 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	prDesc "github.com/jhump/protoreflect/desc"
 	prPrint "github.com/jhump/protoreflect/desc/protoprint"
+	"google.golang.org/genproto/googleapis/api/annotations"
 )
 
 func (renderer *Renderer) RenderProto(fdSet *dpb.FileDescriptorSet) ([]byte, error) {
 
 	buildDependenciesForProtoReflect(fdSet)
-
-	f := NewLineWriter()
-	p := prPrint.Printer{}
 	prFd, err := prDesc.CreateFileDescriptorFromSet(fdSet)
-	//prFd.GetOptions()
-	//prMethodOptions := prFd.GetServices()[0].GetMethods()[0].GetOptions()
-	//prMethodOptions2 := prFd.GetServices()[0].GetMethods()[0].GetMethodOptions()
-	//if prMethodOptions != nil && prMethodOptions2 != nil {
-	//	eHttp, _ := proto.GetExtension(prMethodOptions, annotations.E_Http)
-	//	if eHttp != nil {
-	//
-	//	}
-	//}
+
+	p := prPrint.Printer{}
 	res, err := p.PrintProtoToString(prFd)
 
+	f := NewLineWriter()
 	f.WriteLine(res)
 
 	return f.Bytes(), err
 }
 
 func buildDependenciesForProtoReflect(fdSet *dpb.FileDescriptorSet) {
-	empt := empty.Empty{}
-	fd, _ := descriptor.ForMessage(&empt)
+	// Dependency to "google/protobuf/empty.proto" for RPC methods without any request / response
+	// parameters.
+	e := empty.Empty{}
+	fd, _ := descriptor.ForMessage(&e)
 
-	// According to the documentation of prDesc.CreateFileDescriptorFromSet
-	// the file I want to print needs to be at the end of the array.
-	fdSet.File = append([]*dpb.FileDescriptorProto{fd}, fdSet.File...)
+	// Dependency to google/api/annotations.proto. Here a couple of problems arise:
+	// 1. Problem: 	The name is set wrong
+	// 2. Problem: 	We cannot call descriptor.ForMessage(&annotations.E_Http), which would be our
+	//				required dependency. However, we can call descriptor.ForMessage(&http) and
+	//				then construct the extension manually.
+	// 3. Problem: 	.google.protobuf.MethodOptions gets extended, which is described inside
+	//				"google/protobuf/descriptor.proto", therefore we need to add it as dependency.
+	http := annotations.Http{}
+	fd2, _ := descriptor.ForMessage(&http)
+
+	n := "google/api/annotations.proto"
+	label := dpb.FieldDescriptorProto_LABEL_OPTIONAL
+	t := dpb.FieldDescriptorProto_TYPE_MESSAGE
+	tName := "google.api.HttpRule"
+	extendee := ".google.protobuf.MethodOptions"
+
+	httpExtension := &dpb.FieldDescriptorProto{
+		Name:     &annotations.E_Http.Name,
+		Number:   &annotations.E_Http.Field,
+		Label:    &label,
+		Type:     &t,
+		TypeName: &tName,
+		Extendee: &extendee,
+	}
+
+	fd2.Name = &n                                                               // 1. Problem
+	fd2.Extension = append(fd2.Extension, httpExtension)                        // 2. Problem
+	fd2.Dependency = append(fd2.Dependency, "google/protobuf/descriptor.proto") //3.rd Problem
+
+	// Dependency to google/protobuf/descriptor.proto to address 3.rd Problem. FileDescriptorProto
+	// still needs to be added.
+	fdp := dpb.FieldDescriptorProto{}
+	fd3, _ := descriptor.ForMessage(&fdp)
+
+	// According to the documentation of prDesc.CreateFileDescriptorFromSet the file I want to print
+	// needs to be at the end of the array. All other FileDescriptorProto are dependencies.
+	fdSet.File = append([]*dpb.FileDescriptorProto{fd, fd2, fd3}, fdSet.File...)
 
 }
 
@@ -69,5 +97,4 @@ func buildDependenciesForProtoReflect(fdSet *dpb.FileDescriptorSet) {
 
 //TODO: Flatten URL Path parameters (query params don't need to be flattened!) (This could actually be done inside the descriptor-generator): So if: RPC request param && inside path && NOT_SCALAR -- > flatten
 
-//TODO: Take a look at this reflect package noah mentioned (to generate protos from filedescriptor input)
 //TODO: Take a look at body parameter
