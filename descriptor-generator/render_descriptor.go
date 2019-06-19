@@ -123,7 +123,8 @@ func buildServiceFromMethods(descr *dpb.FileDescriptorProto, renderer *Renderer)
 		// TODO: ServerStreaming
 
 		mOptionsDescr := &dpb.MethodOptions{}
-		httpRule := getHttpRuleForMethod(method)
+		requestBody := getRequestBodyForRequestParameters(method.ParametersTypeName, renderer.Model.Types)
+		httpRule := getHttpRuleForMethod(method, requestBody)
 		if err := proto.SetExtension(mOptionsDescr, annotations.E_Http, &httpRule); err != nil {
 			return err
 		}
@@ -147,7 +148,24 @@ func buildServiceFromMethods(descr *dpb.FileDescriptorProto, renderer *Renderer)
 	return nil
 }
 
-func getHttpRuleForMethod(method *surface_v1.Method) annotations.HttpRule {
+func getRequestBodyForRequestParameters(name string, types []*surface_v1.Type) *string {
+	requestParameterType := &surface_v1.Type{}
+
+	for _, t := range types {
+		if t.Name == name {
+			requestParameterType = t
+		}
+	}
+
+	for _, f := range requestParameterType.Fields {
+		if f.Position == surface_v1.Position_BODY {
+			return &f.Name
+		}
+	}
+	return nil
+}
+
+func getHttpRuleForMethod(method *surface_v1.Method, body *string) annotations.HttpRule {
 	var httpRule annotations.HttpRule
 	switch method.Method {
 	case "GET":
@@ -181,6 +199,11 @@ func getHttpRuleForMethod(method *surface_v1.Method) annotations.HttpRule {
 			},
 		}
 	}
+
+	if body != nil {
+		httpRule.Body = *body
+	}
+
 	return httpRule
 }
 

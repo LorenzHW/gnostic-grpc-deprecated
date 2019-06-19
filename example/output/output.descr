@@ -1,5 +1,5 @@
 
-Á
+Ù
 outputoutputgoogle/api/annotations.protogoogle/protobuf/empty.proto"3
 Book
 author (	
@@ -47,19 +47,18 @@
 default (2Error"3
 DeleteBookParameters
 shelf (
-book (2Å
+book (2é
 OutputL
 ListShelvesgoogle.protobuf.EmptyListShelvesResponses"Ç”‰ì
-/shelvesL
-CreateShelfCreateShelfParametersCreateShelfResponses"Ç”‰ì
-"/shelvesO
+/shelvesS
+CreateShelfCreateShelfParametersCreateShelfResponses"Ç”‰ì:shelf"/shelvesO
 DeleteShelvesgoogle.protobuf.Emptygoogle.protobuf.Empty"Ç”‰ì
 */shelvesK
 GetShelfGetShelfParametersGetShelfResponses"Ç”‰ì/shelves/{shelf}U
 DeleteShelfDeleteShelfParametersgoogle.protobuf.Empty"Ç”‰ì*/shelves/{shelf}T
-	ListBooksListBooksParametersListBooksResponses"Ç”‰ì/shelves/{shelf}/booksW
+	ListBooksListBooksParametersListBooksResponses"Ç”‰ì/shelves/{shelf}/books]
 
-CreateBookCreateBookParametersCreateBookResponses"Ç”‰ì"/shelves/{shelf}/booksU
+CreateBookCreateBookParametersCreateBookResponses"$Ç”‰ì:book"/shelves/{shelf}/booksU
 GetBookGetBookParametersGetBookResponses"%Ç”‰ì/shelves/{shelf}/books/{book}`
 
 DeleteBookDeleteBookParametersgoogle.protobuf.Empty"%Ç”‰ì*/shelves/{shelf}/books/{book}bproto3
