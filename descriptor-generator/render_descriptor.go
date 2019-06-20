@@ -72,6 +72,10 @@ func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) 
 			label := getLabelForField(f)
 			name := getNameForField(f)
 			typeName := getTypeNameForField(f)
+			f, err = flattenPathParameter(f, types)
+			if err != nil {
+				return err
+			}
 
 			protoType, err := getProtoTypeForField(f)
 			if err != nil {
@@ -91,6 +95,47 @@ func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) 
 		descr.MessageType = append(descr.MessageType, &message)
 	}
 	return nil
+}
+
+// If 'field' is a reference, then it will be flattened, meaning that the values of the reference, will
+// be written into 'field'
+// This is necessary according to: https://github.com/googleapis/googleapis/blob/a8ee1416f4c588f2ab92da72e7c1f588c784d3e6/google/api/http.proto#L62
+func flattenPathParameter(field *surface_v1.Field, types []*surface_v1.Type) (*surface_v1.Field, error) {
+	if field.Position == surface_v1.Position_PATH && field.Kind == surface_v1.FieldKind_REFERENCE {
+
+		t, err := getType(field.Type, types)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(t.Fields) > 1 {
+			return nil, errors.New("Unable to flatten input parameters. ")
+		}
+		field.Type = t.Fields[0].Type
+		field.Name = t.Fields[0].Name
+		field.Format = t.Fields[0].Format
+		field.Kind = t.Fields[0].Kind
+	}
+	return field, nil
+}
+
+// Searches all types from the surface model for a given type 'name'. Returns a type if there is
+// a match, nil if there is no match, and and error if there are multiple types.
+func getType(name string, types []*surface_v1.Type) (*surface_v1.Type, error) {
+	var result []*surface_v1.Type
+	for _, t := range types {
+		if name == t.Name {
+			result = append(result, t)
+		}
+	}
+	if len(result) > 1 {
+		return nil, errors.New("Multiple types with the same name exist. This is due to the fact" +
+			" that there are multiple components inside the OpenAPI specification with the same Name. ")
+	}
+	if len(result) == 1 {
+		return result[0], nil
+	}
+	return nil, nil
 }
 
 func getLabelForField(f *surface_v1.Field) *dpb.FieldDescriptorProto_Label {
