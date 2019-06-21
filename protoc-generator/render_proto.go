@@ -84,18 +84,8 @@ func buildDependenciesForProtoReflect(fdSet *dpb.FileDescriptorSet) {
 
 }
 
-// WATCH OUT FOR:
-// The path template may refer to one or more fields in the gRPC request message, as long
-// as each field is a non-repeated field with a primitive (non-message) type.
-// see: https://github.com/googleapis/googleapis/blob/a8ee1416f4c588f2ab92da72e7c1f588c784d3e6/google/api/http.proto#L62
-// AND:
-// Note that fields which are mapped to URL query parameters must have a
-// primitive type or a repeated primitive type or a non-repeated message type.
-// see: https://github.com/googleapis/googleapis/blob/a8ee1416f4c588f2ab92da72e7c1f588c784d3e6/google/api/http.proto#L119
-
 //TODO: handle enum. Not sure if possible, because of
 //TODO: https://github.com/googleapis/googleapis/blob/a8ee1416f4c588f2ab92da72e7c1f588c784d3e6/google/api/http.proto#L62
 
-//TODO: Flatten URL Path parameters (query params don't need to be flattened!) (This could actually be done inside the descriptor-generator): So if: RPC request param && inside path && NOT_SCALAR -- > flatten
-
-//TODO: Take a look at body parameter
+//TODO: Document code a bit + error handling
+//TODO: Check out how protoreflect tests for correctness and maybe do it similar.
