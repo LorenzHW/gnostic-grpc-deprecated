@@ -78,13 +78,20 @@ func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) 
 
 		for i, f := range t.Fields {
 			if isRequestParameter(t) {
-				f, err = validatePathParameter(f, types)
-				if err != nil {
-					return err
+				// It can also be Position_BODY in case of a reference. Surface model does not
+				// give us information about the position of a reference and defaults on body.
+				if f.Position == surface_v1.Position_BODY || f.Position == surface_v1.Position_PATH {
+					f, err = validatePathParameter(f, types)
+					if err != nil {
+						return err
+					}
 				}
-				f, err = validateQueryParameter(f)
-				if err != nil {
-					return err
+
+				if f.Position == surface_v1.Position_BODY || f.Position == surface_v1.Position_QUERY {
+					f, err = validateQueryParameter(f)
+					if err != nil {
+						return err
+					}
 				}
 			}
 
@@ -164,7 +171,7 @@ func validatePathParameter(field *surface_v1.Field, types []*surface_v1.Type) (*
 				return field, nil
 			}
 		}
-		return nil, errors.New("The path parameter with the type " + field.Type + " is invalid. " +
+		return nil, errors.New("The path parameter with the Name " + field.Name + " is invalid. " +
 			"The path template may refer to one or more fields in the gRPC request message, as" +
 			" long as each field is a non-repeated field with a primitive (non-message) type")
 	}
@@ -178,7 +185,7 @@ func validateQueryParameter(field *surface_v1.Field) (*surface_v1.Field, error) 
 	if !(field.Kind == surface_v1.FieldKind_SCALAR ||
 		(field.Kind == surface_v1.FieldKind_ARRAY && openAPIScalarTypes[field.Type]) ||
 		(field.Kind == surface_v1.FieldKind_REFERENCE)) {
-		return nil, errors.New("The query parameter with the type " + field.Type + " is invalid. " +
+		return nil, errors.New("The query parameter with the Name " + field.Name + " is invalid. " +
 			"Note that fields which are mapped to URL query parameters must have a primitive type or" +
 			" a repeated primitive type or a non-repeated message type.")
 	}
