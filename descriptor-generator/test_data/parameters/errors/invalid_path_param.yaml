@@ -1,0 +1,22 @@
+openapi: 3.0.0
+info:
+  title: Test API for GSoC project
+  version: "1.0.0"
+  description: |
+    This is a OpenAPI description for testing my GSoC project.
+
+paths:
+  ########################## PARAMETER ##########################
+  /testInvalidPathParameter/{param1}:
+    get:
+      operationId: testInvalidPathParameter
+      parameters:
+        - name: param1
+          in: path
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        200:
+          description: success
