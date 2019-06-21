@@ -192,7 +192,9 @@ func validateQueryParameter(field *surface_v1.Field) (*surface_v1.Field, error) 
 	if field.Position == surface_v1.Position_BODY {
 		// Surface model does not give information about the position of references. It defaults
 		// on Position_BODY. So we have to set it explicitly here.
-		field.Position = surface_v1.Position_QUERY
+		//field.Position = surface_v1.Position_QUERY
+		//TODO: We can comment this in again, if we fix the issue with the position of
+		//TODO: parameters inside of surface model.
 	}
 	return field, nil
 }
