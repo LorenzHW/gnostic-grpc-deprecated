@@ -32,7 +32,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ComponentExampleObjectPerson'
+                $ref: '#/components/schemas/Person'
   /testResponseMultipleContent:
     get:
       operationId: testResponseMultipleContent
@@ -42,10 +42,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ComponentExampleObjectPerson'
+                $ref: '#/components/schemas/Person'
             application/xml:
               schema:
-                $ref: '#/components/schemas/ComponentExampleObjectPerson'
+                $ref: '#/components/schemas/Person'
         400:
           description: failure
   /testResponse400StatusCode: #TODO: How should error responses be handled?
@@ -59,10 +59,10 @@ paths:
       operationId: testResponseComponentReference
       responses:
         200:
-          $ref: '#/components/responses/ComponentExampleResponse'
+          $ref: '#/components/responses/Response'
 components:
   schemas:
-    ComponentExampleObjectPerson:
+    Person:
       type: object
       required:
         - name
@@ -85,9 +85,9 @@ components:
           items:
             type: string
   responses:
-    ComponentExampleResponse:
+    Response:
       description: success
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ComponentExampleObjectPerson'
+            $ref: '#/components/schemas/Person'

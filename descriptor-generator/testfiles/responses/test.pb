@@ -7,7 +7,7 @@ Structure of tests:
 /testResponse*    --> To test everything related to respones
 /testRequestBody* --> To test everything related to request bodies
 others            --> Other stuff
-21.0.0"È
+21.0.0"ì
 g
 /testResponseNativeP"N*testResponseNativeB86
 200/
@@ -17,28 +17,28 @@ g
 application/json
 
 	 string
-ò
-/testResponseReference~"|*testResponseReferenceBca
-200Z
-X
-successM
-K
-application/json7
-53
-1#/components/schemas/ComponentExampleObjectPerson
-ã
-/testResponseMultipleContentÍ"Á*testResponseMultipleContentB«∞
-200®
-•
-successô
-K
-application/json7
-53
-1#/components/schemas/ComponentExampleObjectPerson
-J
-application/xml7
-53
-1#/components/schemas/ComponentExampleObjectPerson
+Ç
+/testResponseReferenceh"f*testResponseReferenceBMK
+200D
+B
+success7
+5
+application/json!
+
+#/components/schemas/Person
+‹
+/testResponseMultipleContentª"∏*testResponseMultipleContentBòÅ
+200z
+x
+successm
+5
+application/json!
+
+#/components/schemas/Person
+4
+application/xml!
+
+#/components/schemas/Person
 400
 	
 failure
@@ -47,13 +47,13 @@ O
 400	
 
 error
-É
-/testResponseComponentReference`"^*testResponseComponentReferenceB<:
-20031
-/#/components/responses/ComponentExampleResponse*”
-÷
-”
-ComponentExampleObjectPerson≤
+s
+/testResponseComponentReferenceP"N*testResponseComponentReferenceB,*
+200#!
+#/components/responses/Response*ó
+¿
+Ω
+Person≤
 Ø∫name∫	photoUrls object˙è
 
 id
@@ -70,12 +70,12 @@ O
 &*
 photoUrl( arrayÚ
 
-	 stringx
-v
-ComponentExampleResponseZ
-X
-successM
-K
-application/json7
-53
-1#/components/schemas/ComponentExampleObjectPerson
+	 stringR
+P
+ResponseD
+B
+success7
+5
+application/json!
+
+#/components/schemas/Person

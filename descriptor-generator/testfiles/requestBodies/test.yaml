@@ -20,7 +20,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ComponentExampleObjectPerson'
+              $ref: '#/components/schemas/Person'
       responses:
         200:
           description: success
@@ -28,7 +28,7 @@ paths:
     get:
       operationId: testRequestBodyReference
       requestBody:
-        $ref: '#/components/requestBodies/ComponentExampleRequestBody'
+        $ref: '#/components/requestBodies/RequestBody'
       responses:
         200:
           description: success
@@ -69,7 +69,7 @@ paths:
 #    ########################## END ##########################
 components:
   schemas:
-    ComponentExampleObjectPerson:
+    Person:
       type: object
       required:
         - name
@@ -92,10 +92,10 @@ components:
           items:
             type: string
   requestBodies:
-    ComponentExampleRequestBody:
+    RequestBody:
       description: A JSON object containing information
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ComponentExampleObjectPerson'
+            $ref: '#/components/schemas/Person'

@@ -7,26 +7,26 @@ Structure of tests:
 /testResponse*    --> To test everything related to respones
 /testRequestBody* --> To test everything related to request bodies
 others            --> Other stuff
-21.0.0"°
-ê
-/testRequestBody|"z*testRequestBody:Q
-OM
-K
-application/json7
-53
-1#/components/schemas/ComponentExampleObjectPersonB
+21.0.0"˘
+z
+/testRequestBodyf"d*testRequestBody:;
+97
+5
+application/json!
+
+#/components/schemas/PersonB
 200
 	
 success
-ã
-/testRequestBodyReferencen"l*testRequestBodyReference::8
-6#/components/requestBodies/ComponentExampleRequestBodyB
+{
+/testRequestBodyReference^"\*testRequestBodyReference:*(
+&#/components/requestBodies/RequestBodyB
 200
 	
-success*˜
-÷
-”
-ComponentExampleObjectPerson≤
+success*π
+¿
+Ω
+Person≤
 Ø∫name∫	photoUrls object˙è
 
 id
@@ -43,12 +43,12 @@ K
 &*
 photoUrl( arrayÚ
 
-	 string*õ
-ò
-ComponentExampleRequestBodyy
-w
-$A JSON object containing informationM
-K
-application/json7
-53
-1#/components/schemas/ComponentExampleObjectPerson
+	 string*t
+r
+RequestBodyc
+a
+$A JSON object containing information7
+5
+application/json!
+
+#/components/schemas/Person
