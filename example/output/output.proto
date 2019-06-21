@@ -106,7 +106,7 @@ service Output {
   }
 
   rpc CreateShelf ( CreateShelfParameters ) returns ( CreateShelfResponses ) {
-    option (google.api.http) = { post:"/shelves"  };
+    option (google.api.http) = { post:"/shelves" body:"shelf"  };
   }
 
   rpc DeleteShelves ( google.protobuf.Empty ) returns ( google.protobuf.Empty ) {
@@ -126,7 +126,7 @@ service Output {
   }
 
   rpc CreateBook ( CreateBookParameters ) returns ( CreateBookResponses ) {
-    option (google.api.http) = { post:"/shelves/{shelf}/books"  };
+    option (google.api.http) = { post:"/shelves/{shelf}/books" body:"book"  };
   }
 
   rpc GetBook ( GetBookParameters ) returns ( GetBookResponses ) {
