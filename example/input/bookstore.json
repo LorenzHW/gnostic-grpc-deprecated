@@ -17,13 +17,7 @@
         "operationId": "getShelf",
         "parameters": [
           {
-            "description": "ID of the shelf to get.",
-            "in": "path",
-            "name": "shelf",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/parameters/shelfParam"
-            }
+            "$ref": "#/components/parameters/shelfParam"
           }
         ],
         "responses": {

@@ -1,5 +1,5 @@
 
-”
+ˆ
 outputoutputgoogle/api/annotations.protogoogle/protobuf/empty.proto"3
 Book
 author (	
@@ -17,10 +17,9 @@
 message (	"
 
 ShelfParam
-shelf ("/
-GetShelfParameters
-shelf (2
-ShelfParam">
+shelf ("#
+GetShelfParameters
+shelf (">
 GetShelfResponses
 ok (2Shelf
 default (2Error"&

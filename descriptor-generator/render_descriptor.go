@@ -40,12 +40,13 @@ func (renderer *Renderer) RenderFileDescriptorSet() (res []byte, err error) {
 	}
 
 	buildDependencies(fileDescriptorProto)
-	err = buildServiceFromMethods(fileDescriptorProto, renderer)
+
+	err = buildMessagesFromTypes(fileDescriptorProto, renderer)
 	if err != nil {
 		return nil, err
 	}
 
-	err = buildMessagesFromTypes(fileDescriptorProto, renderer)
+	err = buildServiceFromMethods(fileDescriptorProto, renderer)
 	if err != nil {
 		return nil, err
 	}
@@ -68,14 +69,17 @@ func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) 
 		}
 
 		for i, f := range t.Fields {
+			if isRequestParameter(t) {
+				f, err = flattenPathParameter(f, types)
+				if err != nil {
+					return err
+				}
+			}
+
 			ctr := int32(i + 1)
 			label := getLabelForField(f)
 			name := getNameForField(f)
 			typeName := getTypeNameForField(f)
-			f, err = flattenPathParameter(f, types)
-			if err != nil {
-				return err
-			}
 
 			protoType, err := getProtoTypeForField(f)
 			if err != nil {
@@ -97,12 +101,20 @@ func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) 
 	return nil
 }
 
-// If 'field' is a reference, then it will be flattened, meaning that the values of the reference, will
-// be written into 'field'
+// Checks whether 't' is a type that will be used as a request parameter for a RPC method.
+func isRequestParameter(t *surface_v1.Type) bool {
+	if strings.Contains(t.Description, t.GetName()+" holds parameters to") {
+		return true
+	}
+	return false
+}
+
+// If 'field' is a reference and holds a path parameter, then it will be flattened, meaning that the
+// values of the reference, will be written into 'field'.
 // This is necessary according to: https://github.com/googleapis/googleapis/blob/a8ee1416f4c588f2ab92da72e7c1f588c784d3e6/google/api/http.proto#L62
 func flattenPathParameter(field *surface_v1.Field, types []*surface_v1.Type) (*surface_v1.Field, error) {
-	if field.Position == surface_v1.Position_PATH && field.Kind == surface_v1.FieldKind_REFERENCE {
-
+	if field.Kind == surface_v1.FieldKind_REFERENCE {
+		// We got a reference to a parameter. Let's get the actual type.
 		t, err := getType(field.Type, types)
 		if err != nil {
 			return nil, err
@@ -111,10 +123,15 @@ func flattenPathParameter(field *surface_v1.Field, types []*surface_v1.Type) (*s
 		if len(t.Fields) > 1 {
 			return nil, errors.New("Unable to flatten input parameters. ")
 		}
-		field.Type = t.Fields[0].Type
-		field.Name = t.Fields[0].Name
-		field.Format = t.Fields[0].Format
-		field.Kind = t.Fields[0].Kind
+
+		if t.Fields[0].Position == surface_v1.Position_PATH {
+			// Ok, the referenced parameter is a path parameter. Let's flatten it.
+			field.Type = t.Fields[0].Type
+			field.Name = t.Fields[0].Name
+			field.Format = t.Fields[0].Format
+			field.Kind = t.Fields[0].Kind
+			field.Position = surface_v1.Position_PATH
+		}
 	}
 	return field, nil
 }
