@@ -1,0 +1,27 @@
+
+û
+testPackagetestPackagegoogle/api/annotations.protogoogle/protobuf/empty.proto"B
+Person
+
+id (
+age (
+name (	
+	photourls (	"$
+Response
+response (2Person")
+TestResponseNativeResponses
+
+ok (	"4
+TestResponseReferenceResponses
+ok (2Person"N
+$TestResponseMultipleContentResponses
+ok (2Person
+ok (2Person"?
+'TestResponseComponentReferenceResponses
+ok (2Response2‚
+TestPackagee
+TestResponseNativegoogle.protobuf.EmptyTestResponseNativeResponses"Ç”‰ì/testResponseNativen
+TestResponseReferencegoogle.protobuf.EmptyTestResponseReferenceResponses"Ç”‰ì/testResponseReferenceÄ
+TestResponseMultipleContentgoogle.protobuf.Empty$TestResponseMultipleContentResponses"$Ç”‰ì/testResponseMultipleContentm
+TestResponse400StatusCodegoogle.protobuf.Emptygoogle.protobuf.Empty""Ç”‰ì/testResponse400StatusCodeâ
+TestResponseComponentReferencegoogle.protobuf.Empty'TestResponseComponentReferenceResponses"'Ç”‰ì!/testResponseComponentReferencebproto3

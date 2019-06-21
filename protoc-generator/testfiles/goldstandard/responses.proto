@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package testPackage;
+
+import "google/api/annotations.proto";
+
+import "google/protobuf/empty.proto";
+
+message Person {
+  int64 id = 1;
+
+  int64 age = 2;
+
+  string name = 3;
+
+  repeated string photourls = 4;
+}
+
+message Response {
+  Person response = 1;
+}
+
+message TestResponseNativeResponses {
+  string ok = 1;
+}
+
+message TestResponseReferenceResponses {
+  Person ok = 1;
+}
+
+message TestResponseMultipleContentResponses {
+  Person ok = 1;
+
+  Person ok = 2;
+}
+
+message TestResponseComponentReferenceResponses {
+  Response ok = 1;
+}
+
+service TestPackage {
+  rpc TestResponseNative ( google.protobuf.Empty ) returns ( TestResponseNativeResponses ) {
+    option (google.api.http) = { get:"/testResponseNative"  };
+  }
+
+  rpc TestResponseReference ( google.protobuf.Empty ) returns ( TestResponseReferenceResponses ) {
+    option (google.api.http) = { get:"/testResponseReference"  };
+  }
+
+  rpc TestResponseMultipleContent ( google.protobuf.Empty ) returns ( TestResponseMultipleContentResponses ) {
+    option (google.api.http) = { get:"/testResponseMultipleContent"  };
+  }
+
+  rpc TestResponse400StatusCode ( google.protobuf.Empty ) returns ( google.protobuf.Empty ) {
+    option (google.api.http) = { get:"/testResponse400StatusCode"  };
+  }
+
+  rpc TestResponseComponentReference ( google.protobuf.Empty ) returns ( TestResponseComponentReferenceResponses ) {
+    option (google.api.http) = { get:"/testResponseComponentReference"  };
+  }
+}
+

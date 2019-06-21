@@ -12,7 +12,7 @@ import (
 
 func TestFileDescriptorGeneratorParameters(t *testing.T) {
 	input := "testfiles/parameters/test.pb"
-	output := "../protoc-generator/testfiles/parameters/test.descr"
+	output := "../protoc-generator/testfiles/input/parameter.descr"
 
 	fileDescriptorData, err := runDescriptorGeneratorWithoutEnv(input)
 	if err != nil {
@@ -39,7 +39,7 @@ func TestFileDescriptorGeneratorParameters(t *testing.T) {
 
 func TestFileDescriptorGeneratorRequestBodies(t *testing.T) {
 	input := "testfiles/requestBodies/test.pb"
-	output := "../protoc-generator/testfiles/requestBodies/test.descr"
+	output := "../protoc-generator/testfiles/input/requestbodies.descr"
 
 	fileDescriptorData, err := runDescriptorGeneratorWithoutEnv(input)
 	if err != nil {
@@ -52,7 +52,7 @@ func TestFileDescriptorGeneratorRequestBodies(t *testing.T) {
 
 func TestFileDescriptorGeneratorResponses(t *testing.T) {
 	input := "testfiles/responses/test.pb"
-	output := "../protoc-generator/testfiles/responses/test.descr"
+	output := "../protoc-generator/testfiles/input/responses.descr"
 
 	fileDescriptorData, err := runDescriptorGeneratorWithoutEnv(input)
 	if err != nil {

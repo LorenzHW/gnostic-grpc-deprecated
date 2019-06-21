@@ -89,3 +89,6 @@ func buildDependenciesForProtoReflect(fdSet *dpb.FileDescriptorSet) {
 
 //TODO: Document code a bit + error handling
 //TODO: Check out how protoreflect tests for correctness and maybe do it similar.
+//TODO: Add test cases for render_proto
+//TODO: Surface model: Position of query params if they are reference!
+//TODO: Removing duplicates from responses

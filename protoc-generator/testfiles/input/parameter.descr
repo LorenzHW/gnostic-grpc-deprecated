@@ -1,0 +1,36 @@
+
+˜
+
+testPackagetestPackagegoogle/api/annotations.protogoogle/protobuf/empty.proto"
+
+Parameter1
+param1 ("
+
+Parameter2
+param2 (".
+TestParameterQueryParameters
+param1 ("2
+ TestParameterQueryEnumParameters
+param1 ("-
+TestParameterPathParameters
+param1 (	"1
+TestParameterPathEnumParameters
+param1 ("E
+#TestParameterMultiplePathParameters
+param1 (	
+param2 (	"B
+ TestParameterReferenceParameters
+
+parameter1 (2
+Parameter1"0
+TestFlattenParameterParameters
+param2 (2ÿ
+TestPackagef
+TestParameterQueryTestParameterQueryParametersgoogle.protobuf.Empty"Ç”‰ì/testParameterQueryr
+TestParameterQueryEnum TestParameterQueryEnumParametersgoogle.protobuf.Empty"Ç”‰ì/testParameterQueryEnuml
+TestParameterPathTestParameterPathParametersgoogle.protobuf.Empty"#Ç”‰ì/testParameterPath/{param1}x
+TestParameterPathEnumTestParameterPathEnumParametersgoogle.protobuf.Empty"'Ç”‰ì!/testParameterPathEnum/{param1}ç
+TestParameterMultiplePath#TestParameterMultiplePathParametersgoogle.protobuf.Empty"4Ç”‰ì.,/testParameterMultiplePath/{param1}/{param2}~
+TestParameterReference TestParameterReferenceParametersgoogle.protobuf.Empty"+Ç”‰ì%:
+parameter1/testParameterReferenceu
+TestFlattenParameterTestFlattenParameterParametersgoogle.protobuf.Empty"&Ç”‰ì /testFlattenParameter/{param2}bproto3
