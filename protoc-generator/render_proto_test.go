@@ -27,7 +27,7 @@ func RunProtoGeneratorWithoutEnv(input string) ([]byte, error) {
 	fileDescr := &descriptor.FileDescriptorSet{}
 	proto.Unmarshal(fileDescriptorSetData, fileDescr)
 	renderer, err := NewProtoRenderer(fileDescr)
-	protoData, err := renderer.RenderProto(fileDescr.File[0])
+	protoData, err := renderer.RenderProto(fileDescr)
 	return protoData, err
 }
 
