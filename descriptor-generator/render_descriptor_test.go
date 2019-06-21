@@ -16,10 +16,24 @@ func TestFileDescriptorGeneratorParameters(t *testing.T) {
 
 	fileDescriptorData, err := runDescriptorGeneratorWithoutEnv(input)
 	if err != nil {
-		t.Errorf("Error while executing the protoc-generator")
+		t.Errorf("Error while executing the descriptor generator")
 		t.Errorf(err.Error())
 	}
 	writeFile(output, fileDescriptorData)
+
+	erroneousInput := []string{"test_data/parameters/errors/invalid_path_param.pb", "test_data/parameters/errors/invalid_query_param.pb"}
+
+	for _, errorInput := range erroneousInput {
+		errorMessages := map[string]bool{
+			"The path parameter with the Name param1 is invalid. The path template may refer to one or more fields in the gRPC request message, as long as each field is a non-repeated field with a primitive (non-message) type": true,
+			"The query parameter with the Name param1 is invalid. Note that fields which are mapped to URL query parameters must have a primitive type or a repeated primitive type or a non-repeated message type.":               true,
+		}
+		fileDescriptorData, err = runDescriptorGeneratorWithoutEnv(errorInput)
+		if _, ok := errorMessages[err.Error()]; !ok {
+			t.Errorf("Error while executing the descriptor generator")
+			t.Errorf(err.Error())
+		}
+	}
 
 }
 

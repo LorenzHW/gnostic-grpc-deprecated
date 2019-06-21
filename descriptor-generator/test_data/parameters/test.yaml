@@ -63,14 +63,12 @@ paths:
         - name: param1
           in: path
           schema:
-            type: array
-            items:
-              type: integer
-              format: int64
-              enum:
-                - 1337
-                - 1338
-              default: 1338
+            type: integer
+            format: int64
+            enum:
+              - 1337
+              - 1338
+            default: 1338
       responses:
         200:
           description: success
@@ -95,15 +93,31 @@ paths:
     get:
       operationId: testParameterReference
       parameters:
-        - $ref: '#/components/parameters/ComponentExampleParameter'
+        - $ref: '#/components/parameters/Parameter1'
       responses:
         200:
           description: success
+
+  /testFlattenParameter/{param2}:
+    get:
+      operationId: testFlattenParameter
+      parameters:
+        - $ref: '#/components/parameters/Parameter2'
+      responses:
+        200:
+          description: success
+
 components:
   parameters:
-    ComponentExampleParameter:
+    Parameter1:
       name: param1
       in: query
+      schema:
+        type: integer
+        format: int64
+    Parameter2:
+      name: param2
+      in: path
       schema:
         type: integer
         format: int64
