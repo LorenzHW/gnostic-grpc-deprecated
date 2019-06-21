@@ -58,6 +58,14 @@ func (renderer *Renderer) RenderFileDescriptorSet() (res []byte, err error) {
 	return res, err
 }
 
+func buildDependencies(descr *dpb.FileDescriptorProto) {
+	dependencies := []string{"google/api/annotations.proto", "google/protobuf/empty.proto"}
+
+	for _, dep := range dependencies {
+		descr.Dependency = append(descr.Dependency, dep)
+	}
+}
+
 func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) (err error) {
 	types := renderer.Model.Types
 
@@ -70,7 +78,11 @@ func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) 
 
 		for i, f := range t.Fields {
 			if isRequestParameter(t) {
-				f, err = flattenPathParameter(f, types)
+				f, err = validatePathParameter(f, types)
+				if err != nil {
+					return err
+				}
+				f, err = validateQueryParameter(f)
 				if err != nil {
 					return err
 				}
@@ -99,76 +111,6 @@ func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) 
 		descr.MessageType = append(descr.MessageType, &message)
 	}
 	return nil
-}
-
-// Checks whether 't' is a type that will be used as a request parameter for a RPC method.
-func isRequestParameter(t *surface_v1.Type) bool {
-	if strings.Contains(t.Description, t.GetName()+" holds parameters to") {
-		return true
-	}
-	return false
-}
-
-// If 'field' is a reference and holds a path parameter, then it will be flattened, meaning that the
-// values of the reference, will be written into 'field'.
-// This is necessary according to: https://github.com/googleapis/googleapis/blob/a8ee1416f4c588f2ab92da72e7c1f588c784d3e6/google/api/http.proto#L62
-func flattenPathParameter(field *surface_v1.Field, types []*surface_v1.Type) (*surface_v1.Field, error) {
-	if field.Kind == surface_v1.FieldKind_REFERENCE {
-		// We got a reference to a parameter. Let's get the actual type.
-		t, err := getType(field.Type, types)
-		if err != nil {
-			return nil, err
-		}
-
-		if len(t.Fields) > 1 {
-			return nil, errors.New("Unable to flatten input parameters. ")
-		}
-
-		if t.Fields[0].Position == surface_v1.Position_PATH {
-			// Ok, the referenced parameter is a path parameter. Let's flatten it.
-			field.Type = t.Fields[0].Type
-			field.Name = t.Fields[0].Name
-			field.Format = t.Fields[0].Format
-			field.Kind = t.Fields[0].Kind
-			field.Position = surface_v1.Position_PATH
-		}
-	}
-	return field, nil
-}
-
-// Searches all types from the surface model for a given type 'name'. Returns a type if there is
-// a match, nil if there is no match, and and error if there are multiple types.
-func getType(name string, types []*surface_v1.Type) (*surface_v1.Type, error) {
-	var result []*surface_v1.Type
-	for _, t := range types {
-		if name == t.Name {
-			result = append(result, t)
-		}
-	}
-	if len(result) > 1 {
-		return nil, errors.New("Multiple types with the same name exist. This is due to the fact" +
-			" that there are multiple components inside the OpenAPI specification with the same Name. ")
-	}
-	if len(result) == 1 {
-		return result[0], nil
-	}
-	return nil, nil
-}
-
-func getLabelForField(f *surface_v1.Field) *dpb.FieldDescriptorProto_Label {
-	res := dpb.FieldDescriptorProto_LABEL_OPTIONAL
-	if f.Kind == surface_v1.FieldKind_ARRAY {
-		res = dpb.FieldDescriptorProto_LABEL_REPEATED
-	}
-	return &res
-}
-
-func buildDependencies(descr *dpb.FileDescriptorProto) {
-	dependencies := []string{"google/api/annotations.proto", "google/protobuf/empty.proto"}
-
-	for _, dep := range dependencies {
-		descr.Dependency = append(descr.Dependency, dep)
-	}
 }
 
 func buildServiceFromMethods(descr *dpb.FileDescriptorProto, renderer *Renderer) (err error) {
@@ -208,6 +150,77 @@ func buildServiceFromMethods(descr *dpb.FileDescriptorProto, renderer *Renderer)
 		service.Method = append(service.Method, mDescr)
 	}
 	return nil
+}
+
+// Validates if the path parameter has the requested structure.
+// This is necessary according to: https://github.com/googleapis/googleapis/blob/a8ee1416f4c588f2ab92da72e7c1f588c784d3e6/google/api/http.proto#L62
+func validatePathParameter(field *surface_v1.Field, types []*surface_v1.Type) (*surface_v1.Field, error) {
+
+	if field.Kind != surface_v1.FieldKind_SCALAR {
+		if field.Kind == surface_v1.FieldKind_REFERENCE {
+			// We got a reference. Let's try to flatten!
+			field, err := flattenPathParameter(field, types)
+			if err == nil {
+				return field, nil
+			}
+		}
+		return nil, errors.New("The path parameter with the type " + field.Type + " is invalid. " +
+			"The path template may refer to one or more fields in the gRPC request message, as" +
+			" long as each field is a non-repeated field with a primitive (non-message) type")
+	}
+
+	return field, nil
+}
+
+// Validates if the query parameter has the requested structure.
+// This is necessary according to: https://github.com/googleapis/googleapis/blob/a8ee1416f4c588f2ab92da72e7c1f588c784d3e6/google/api/http.proto#L119
+func validateQueryParameter(field *surface_v1.Field) (*surface_v1.Field, error) {
+	if !(field.Kind == surface_v1.FieldKind_SCALAR ||
+		(field.Kind == surface_v1.FieldKind_ARRAY && openAPIScalarTypes[field.Type]) ||
+		(field.Kind == surface_v1.FieldKind_REFERENCE)) {
+		return nil, errors.New("The query parameter with the type " + field.Type + " is invalid. " +
+			"Note that fields which are mapped to URL query parameters must have a primitive type or" +
+			" a repeated primitive type or a non-repeated message type.")
+	}
+	if field.Position == surface_v1.Position_BODY {
+		// Surface model does not give information about the position of references. It defaults
+		// on Position_BODY. So we have to set it explicitly here.
+		field.Position = surface_v1.Position_QUERY
+	}
+	return field, nil
+}
+
+// If 'field' is a reference and holds a path parameter, then it will be flattened, meaning that the
+// values of the reference, will be written into 'field'.
+func flattenPathParameter(field *surface_v1.Field, types []*surface_v1.Type) (*surface_v1.Field, error) {
+	// We got a reference to a parameter. Let's get the actual type.
+	t, err := getType(field.Type, types)
+	if err != nil {
+		return nil, err
+	}
+
+	if t.Fields[0].Position != surface_v1.Position_PATH {
+		return field, nil
+	}
+	if len(t.Fields) > 1 || t.Fields[0].Kind != surface_v1.FieldKind_SCALAR {
+		return nil, errors.New("Not possible to flatten multiple fields or non-scalar values. ")
+	}
+
+	// Ok, it is possible to flatten the path parameter.
+	field.Type = t.Fields[0].Type
+	field.Name = t.Fields[0].Name
+	field.Format = t.Fields[0].Format
+	field.Kind = t.Fields[0].Kind
+	field.Position = surface_v1.Position_PATH
+	return field, nil
+}
+
+// Checks whether 't' is a type that will be used as a request parameter for a RPC method.
+func isRequestParameter(t *surface_v1.Type) bool {
+	if strings.Contains(t.Description, t.GetName()+" holds parameters to") {
+		return true
+	}
+	return false
 }
 
 func getRequestBodyForRequestParameters(name string, types []*surface_v1.Type) *string {
@@ -303,6 +316,14 @@ func getNameForField(f *surface_v1.Field) *string {
 	return &name
 }
 
+func getLabelForField(f *surface_v1.Field) *dpb.FieldDescriptorProto_Label {
+	res := dpb.FieldDescriptorProto_LABEL_OPTIONAL
+	if f.Kind == surface_v1.FieldKind_ARRAY {
+		res = dpb.FieldDescriptorProto_LABEL_REPEATED
+	}
+	return &res
+}
+
 // Returns the type of the reference. The convention inside .proto is, that all field names are
 // lowercase and all messages and types are capitalized if they are not scalar types (int64, string, ...).
 func getTypeNameForField(f *surface_v1.Field) *string {
@@ -313,6 +334,25 @@ func getTypeNameForField(f *surface_v1.Field) *string {
 	}
 
 	return nil
+}
+
+// Searches all types from the surface model for a given type 'name'. Returns a type if there is
+// a match, nil if there is no match, and and error if there are multiple types.
+func getType(name string, types []*surface_v1.Type) (*surface_v1.Type, error) {
+	var result []*surface_v1.Type
+	for _, t := range types {
+		if name == t.Name {
+			result = append(result, t)
+		}
+	}
+	if len(result) > 1 {
+		return nil, errors.New("Multiple types with the same name exist. This is due to the fact" +
+			" that there are multiple components inside the OpenAPI specification with the same Name. ")
+	}
+	if len(result) == 1 {
+		return result[0], nil
+	}
+	return nil, nil
 }
 
 func getProtobufTypes() map[string]dpb.FieldDescriptorProto_Type {
