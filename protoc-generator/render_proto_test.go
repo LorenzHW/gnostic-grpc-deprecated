@@ -10,8 +10,8 @@ import (
 )
 
 func TestProtoGenerator(t *testing.T) {
-	input := "test_data/parameters/test.descr"
-	output := "test_data/parameters/test.proto"
+	input := "testfiles/parameters/test.descr"
+	output := "testfiles/parameters/test.proto"
 
 	protoData, err := RunProtoGeneratorWithoutEnv(input)
 	if err != nil {

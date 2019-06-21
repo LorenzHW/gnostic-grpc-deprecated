@@ -11,8 +11,8 @@ import (
 )
 
 func TestFileDescriptorGeneratorParameters(t *testing.T) {
-	input := "test_data/parameters/test.pb"
-	output := "../protoc-generator/test_data/parameters/test.descr"
+	input := "testfiles/parameters/test.pb"
+	output := "../protoc-generator/testfiles/parameters/test.descr"
 
 	fileDescriptorData, err := runDescriptorGeneratorWithoutEnv(input)
 	if err != nil {
@@ -21,7 +21,7 @@ func TestFileDescriptorGeneratorParameters(t *testing.T) {
 	}
 	writeFile(output, fileDescriptorData)
 
-	erroneousInput := []string{"test_data/parameters/errors/invalid_path_param.pb", "test_data/parameters/errors/invalid_query_param.pb"}
+	erroneousInput := []string{"testfiles/parameters/errors/invalid_path_param.pb", "testfiles/parameters/errors/invalid_query_param.pb"}
 
 	for _, errorInput := range erroneousInput {
 		errorMessages := map[string]bool{
@@ -38,8 +38,8 @@ func TestFileDescriptorGeneratorParameters(t *testing.T) {
 }
 
 func TestFileDescriptorGeneratorRequestBodies(t *testing.T) {
-	input := "test_data/requestBodies/test.pb"
-	output := "../protoc-generator/test_data/requestBodies/test.descr"
+	input := "testfiles/requestBodies/test.pb"
+	output := "../protoc-generator/testfiles/requestBodies/test.descr"
 
 	fileDescriptorData, err := runDescriptorGeneratorWithoutEnv(input)
 	if err != nil {
@@ -51,8 +51,8 @@ func TestFileDescriptorGeneratorRequestBodies(t *testing.T) {
 }
 
 func TestFileDescriptorGeneratorResponses(t *testing.T) {
-	input := "test_data/responses/test.pb"
-	output := "../protoc-generator/test_data/responses/test.descr"
+	input := "testfiles/responses/test.pb"
+	output := "../protoc-generator/testfiles/responses/test.descr"
 
 	fileDescriptorData, err := runDescriptorGeneratorWithoutEnv(input)
 	if err != nil {
