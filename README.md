@@ -16,13 +16,32 @@ To run the descriptor generator:
     
     ./gnostic-protoc-generator -input example/input/bookstore.pb -output example/output/
 
-This generator takes in a binary format of an OpenAPI specification (`example/input/bookstore.pb`
-created with gnostic) and creates a file descriptor set `example/output/output.descr`.
+This command triggers the descriptor-generator. The generator takes in a binary format of an OpenAPI
+specification (`example/input/bookstore.pb` created with gnostic) and creates a file descriptor set
+`example/output/output.descr`.
 
 
 To run the protoc generator:
  
     ./gnostic-protoc-generator -input example/output/output.descr -output example/output/
 
-This generator takes in a file descriptor set `example/output/output.descr` and generates a
-protocol buffer definition (`example/output/output.proto`)
+This command triggers the proto-generator. This generator takes in a file descriptor set
+`example/output/output.descr` and generates a protocol buffer definition (`example/output/output.proto`)
+
+
+## What conversions are currently supported?
+
+Given an [OpenAPI object](https://swagger.io/specification/#oasObject) following fields will be
+represented inside a .proto file
+
+| Object        | Fields        | Supported  |
+| ------------- |:-------------:| -----:|
+| OpenAPI object|               |       |
+|               | openapi       |    No |
+|               | info          |    No |
+|               | servers       |    No |
+|               | paths         |   Yes |
+|               | components    |   Yes |
+|               | security      |    No |
+|               | tags          |    No |
+|               | externalDocs  |    No |
