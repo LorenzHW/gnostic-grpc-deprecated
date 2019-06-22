@@ -78,16 +78,14 @@ func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) 
 
 		for i, f := range t.Fields {
 			if isRequestParameter(t) {
-				// It can also be Position_BODY in case of a reference. Surface model does not
-				// give us information about the position of a reference and defaults on body.
-				if f.Position == surface_v1.Position_BODY || f.Position == surface_v1.Position_PATH {
+				if f.Position == surface_v1.Position_PATH {
 					f, err = validatePathParameter(f, types)
 					if err != nil {
 						return err
 					}
 				}
 
-				if f.Position == surface_v1.Position_BODY || f.Position == surface_v1.Position_QUERY {
+				if f.Position == surface_v1.Position_QUERY {
 					f, err = validateQueryParameter(f)
 					if err != nil {
 						return err
@@ -189,13 +187,7 @@ func validateQueryParameter(field *surface_v1.Field) (*surface_v1.Field, error) 
 			"Note that fields which are mapped to URL query parameters must have a primitive type or" +
 			" a repeated primitive type or a non-repeated message type.")
 	}
-	if field.Position == surface_v1.Position_BODY {
-		// Surface model does not give information about the position of references. It defaults
-		// on Position_BODY. So we have to set it explicitly here.
-		//field.Position = surface_v1.Position_QUERY
-		//TODO: We can comment this in again, if we fix the issue with the position of
-		//TODO: parameters inside of surface model.
-	}
+
 	return field, nil
 }
 
@@ -346,7 +338,7 @@ func getTypeNameForField(f *surface_v1.Field) *string {
 }
 
 // Searches all types from the surface model for a given type 'name'. Returns a type if there is
-// a match, nil if there is no match, and and error if there are multiple types.
+// a match, nil if there is no match, and error if there are multiple types.
 func getType(name string, types []*surface_v1.Type) (*surface_v1.Type, error) {
 	var result []*surface_v1.Type
 	for _, t := range types {
