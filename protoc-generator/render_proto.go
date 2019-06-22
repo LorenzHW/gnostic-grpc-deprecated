@@ -26,10 +26,19 @@ import (
 func (renderer *Renderer) RenderProto(fdSet *dpb.FileDescriptorSet) ([]byte, error) {
 
 	buildDependenciesForProtoReflect(fdSet)
-	prFd, err := prDesc.CreateFileDescriptorFromSet(fdSet)
 
+	// Creates a protoreflect FileDescriptor, which is then used for printing.
+	prFd, err := prDesc.CreateFileDescriptorFromSet(fdSet)
+	if err != nil {
+		return nil, err
+	}
+
+	// Print the protoreflect FileDescriptor.
 	p := prPrint.Printer{}
 	res, err := p.PrintProtoToString(prFd)
+	if err != nil {
+		return nil, err
+	}
 
 	f := NewLineWriter()
 	f.WriteLine(res)
@@ -37,6 +46,11 @@ func (renderer *Renderer) RenderProto(fdSet *dpb.FileDescriptorSet) ([]byte, err
 	return f.Bytes(), err
 }
 
+// Protoreflect needs all the dependencies that are used inside of the initial FileDescriptorProto
+// to work properly. Those dependencies are google/protobuf/empty.proto, google/api/annotations.proto,
+// and "google/protobuf/descriptor.proto". For all those dependencies the corresponding
+// FileDescriptorProto has to be added to the FileDescriptorSet. Protoreflect won't work
+// if a reference is missing.
 func buildDependenciesForProtoReflect(fdSet *dpb.FileDescriptorSet) {
 	// Dependency to "google/protobuf/empty.proto" for RPC methods without any request / response
 	// parameters.
@@ -87,8 +101,5 @@ func buildDependenciesForProtoReflect(fdSet *dpb.FileDescriptorSet) {
 //TODO: handle enum. Not sure if possible, because of
 //TODO: https://github.com/googleapis/googleapis/blob/a8ee1416f4c588f2ab92da72e7c1f588c784d3e6/google/api/http.proto#L62
 
-//TODO: Document code a bit + error handling
-//TODO: Check out how protoreflect tests for correctness and maybe do it similar.
-//TODO: Add test cases for render_proto
-//TODO: Surface model: Position of query params if they are reference!
 //TODO: Removing duplicates from responses
+//TODO: Regenerate mode for proto testing

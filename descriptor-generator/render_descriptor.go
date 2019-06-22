@@ -27,6 +27,12 @@ var protoBufTypes = getProtobufTypes()
 var openAPITypesToProtoBuf = getOpenAPITypesToProtoBufTypes()
 var openAPIScalarTypes = getOpenAPIScalarTypes()
 
+// Uses the output of gnostic to return a dpb.FileDescriptorSet (in bytes). 'renderer' contains
+// the 'model' (surface model) which has all the relevant data to create the dpb.FileDescriptorSet.
+// There are three main steps:
+// 		1. buildDependencies is called to add dependencies to a FileDescriptorProto
+//		2. buildMessagesFromTypes is called to create all messages which will be rendered in .proto
+//		3. buildServiceFromMethods is called to create a RPC service which will be rendered in .proto
 func (renderer *Renderer) RenderFileDescriptorSet() (res []byte, err error) {
 	syntax := "proto3"
 
@@ -58,6 +64,8 @@ func (renderer *Renderer) RenderFileDescriptorSet() (res []byte, err error) {
 	return res, err
 }
 
+// Adds necessary dependencies to 'descr'. annotations.proto for gRPC-HTTP transcoding and empty.proto
+// for RPC methods without parameters.
 func buildDependencies(descr *dpb.FileDescriptorProto) {
 	dependencies := []string{"google/api/annotations.proto", "google/protobuf/empty.proto"}
 
@@ -66,6 +74,8 @@ func buildDependencies(descr *dpb.FileDescriptorProto) {
 	}
 }
 
+// Builds protobuf messages from the surface model types. If the type is a RPC request parameter
+// the fields have to follow certain rules, and therefore have to be validated.
 func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) (err error) {
 	types := renderer.Model.Types
 
@@ -118,6 +128,8 @@ func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) 
 	return nil
 }
 
+// Builds a protobuf RPC service. For every method the corresponding gRPC-HTTP transcoding options (https://github.com/googleapis/googleapis/blob/master/google/api/http.proto)
+// have to be set.
 func buildServiceFromMethods(descr *dpb.FileDescriptorProto, renderer *Renderer) (err error) {
 	methods := renderer.Model.Methods
 	serviceName := strings.Title(renderer.Package)
@@ -224,6 +236,8 @@ func isRequestParameter(t *surface_v1.Type) bool {
 	return false
 }
 
+// Finds the corresponding surface model type for 'name' and returns the name of the field
+// that is a request body. If no such field is found it returns nil.
 func getRequestBodyForRequestParameters(name string, types []*surface_v1.Type) *string {
 	requestParameterType := &surface_v1.Type{}
 
@@ -241,6 +255,8 @@ func getRequestBodyForRequestParameters(name string, types []*surface_v1.Type) *
 	return nil
 }
 
+// Constructs a HttpRule from google/api/http.proto. Enables gRPC-HTTP transcoding on 'method'.
+// If not nil, body is also set.
 func getHttpRuleForMethod(method *surface_v1.Method, body *string) annotations.HttpRule {
 	var httpRule annotations.HttpRule
 	switch method.Method {
@@ -283,25 +299,31 @@ func getHttpRuleForMethod(method *surface_v1.Method, body *string) annotations.H
 	return httpRule
 }
 
+// Tries to find a dpb.FieldDescriptorProto_Type for 'f'. If no protobuf type exists we have
+// to stop with error.
 func getProtoTypeForField(f *surface_v1.Field) (*dpb.FieldDescriptorProto_Type, error) {
+	// Let's see if we can get the type from f.format
 	if protoType, ok := protoBufTypes[f.Format]; ok {
 		return &protoType, nil
 	}
 
+	// Maybe this works.
 	if protoType, ok := protoBufTypes[f.Type]; ok {
 		return &protoType, nil
 	}
 
+	// Safety check
 	if protoType, ok := openAPITypesToProtoBuf[f.Type]; ok {
 		return &protoType, nil
 	}
 
+	// Ok, is it either a reference or an array of non scalar-types?
 	if f.Kind == surface_v1.FieldKind_REFERENCE || (f.Kind == surface_v1.FieldKind_ARRAY && !openAPIScalarTypes[f.Type]) {
-		// It is either a reference or an array of non scalar-types.
 		protoType := dpb.FieldDescriptorProto_TYPE_MESSAGE // TODO: Could also be ENUM?
 		return &protoType, nil
 	}
 
+	// Panic!
 	return nil, errors.New("Unable to find a protobuf type for the surface model type ")
 
 }
@@ -317,6 +339,7 @@ func getNameForField(f *surface_v1.Field) *string {
 	return &name
 }
 
+// Returns a dpb.FieldDescriptorProto_Label for 'f'. If it is an array we need the 'repeated' label.
 func getLabelForField(f *surface_v1.Field) *dpb.FieldDescriptorProto_Label {
 	res := dpb.FieldDescriptorProto_LABEL_OPTIONAL
 	if f.Kind == surface_v1.FieldKind_ARRAY {
@@ -356,6 +379,7 @@ func getType(name string, types []*surface_v1.Type) (*surface_v1.Type, error) {
 	return nil, nil
 }
 
+// A map for this: https://developers.google.com/protocol-buffers/docs/proto3#scalar
 func getProtobufTypes() map[string]dpb.FieldDescriptorProto_Type {
 	typeMapping := make(map[string]dpb.FieldDescriptorProto_Type)
 	typeMapping["double"] = dpb.FieldDescriptorProto_TYPE_DOUBLE
@@ -377,6 +401,8 @@ func getProtobufTypes() map[string]dpb.FieldDescriptorProto_Type {
 	return typeMapping
 }
 
+// Maps OpenAPI data types (https://swagger.io/docs/specification/data-models/data-types/)
+// to protobuf data types.
 func getOpenAPITypesToProtoBufTypes() map[string]dpb.FieldDescriptorProto_Type {
 	return map[string]dpb.FieldDescriptorProto_Type{
 		"string":  dpb.FieldDescriptorProto_TYPE_STRING,
@@ -388,6 +414,7 @@ func getOpenAPITypesToProtoBufTypes() map[string]dpb.FieldDescriptorProto_Type {
 	}
 }
 
+// All scalar types from OpenAPI.
 func getOpenAPIScalarTypes() map[string]bool {
 	return map[string]bool{
 		"string":  true,
