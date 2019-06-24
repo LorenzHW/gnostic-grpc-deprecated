@@ -6,6 +6,12 @@ import "google/api/annotations.proto";
 
 import "google/protobuf/empty.proto";
 
+message Error {
+  int32 code = 1;
+
+  string message = 2;
+}
+
 message Person {
   int64 id = 1;
 
@@ -32,6 +38,13 @@ message TestResponseMultipleContentResponses {
   Person ok = 1;
 }
 
+message TestResponse400StatusCodeResponses {
+  Error badRequest = 1;
+}
+
+message TestResponseAdditionalPropertiesResponses {
+}
+
 message TestResponseComponentReferenceResponses {
   Response ok = 1;
 }
@@ -49,8 +62,12 @@ service TestPackage {
     option (google.api.http) = { get:"/testResponseMultipleContent"  };
   }
 
-  rpc TestResponse400StatusCode ( google.protobuf.Empty ) returns ( google.protobuf.Empty ) {
+  rpc TestResponse400StatusCode ( google.protobuf.Empty ) returns ( TestResponse400StatusCodeResponses ) {
     option (google.api.http) = { get:"/testResponse400StatusCode"  };
+  }
+
+  rpc TestResponseAdditionalProperties ( google.protobuf.Empty ) returns ( TestResponseAdditionalPropertiesResponses ) {
+    option (google.api.http) = { get:"/testResponseAdditionalProperties"  };
   }
 
   rpc TestResponseComponentReference ( google.protobuf.Empty ) returns ( TestResponseComponentReferenceResponses ) {

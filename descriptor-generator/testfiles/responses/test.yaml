@@ -48,12 +48,29 @@ paths:
                 $ref: '#/components/schemas/Person'
         400:
           description: failure
-  /testResponse400StatusCode: #TODO: How should error responses be handled?
+  /testResponse400StatusCode:
     get:
       operationId: testResponse400StatusCode
       responses:
         400:
           description: error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /testResponseAdditionalProperties: #TODO: Does not work ATM
+    get:
+      operationId: testResponseAdditionalProperties
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: integer
+                  format: int32
   /testResponseComponentReference:
     get:
       operationId: testResponseComponentReference
@@ -62,6 +79,17 @@ paths:
           $ref: '#/components/responses/Response'
 components:
   schemas:
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+      type: object
     Person:
       type: object
       required:

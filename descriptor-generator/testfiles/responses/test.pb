@@ -7,7 +7,7 @@ Structure of tests:
 /testResponse*    --> To test everything related to respones
 /testRequestBody* --> To test everything related to request bodies
 others            --> Other stuff
-21.0.0"“
+21.0.0"û
 g
 /testResponseNativeP"N*testResponseNativeB86
 200/
@@ -42,16 +42,40 @@ x
 400
 	
 failure
-O
-/testResponse400StatusCode1"/*testResponse400StatusCodeB
-400	
-
-error
+‡
+/testResponse400StatusCodei"g*testResponse400StatusCodeBJH
+400A
+?
+error6
+4
+application/json 
+
+#/components/schemas/Error
+¬
+!/testResponseAdditionalProperties†"ƒ* testResponseAdditionalPropertiesB_]
+200V
+T
+successful operation<
+:
+application/json&
+$
+"Êobject‚
+
+Êintegeršint32
 s
 /testResponseComponentReferenceP"N*testResponseComponentReferenceB,*
 200#!
-#/components/responses/Response*—
-À
+#/components/responses/Response*÷
+ 
+^
+ErrorU
+SºcodeºmessageÊobjectú6
+
+code
+Êintegeršint32
+
+message
+	Êstring
 ½
 Person²
 ¯ºnameº	photoUrlsÊobjectú
