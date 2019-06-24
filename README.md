@@ -20,7 +20,7 @@ To run the descriptor generator:
 
 This command triggers the descriptor-generator. The generator takes in a binary format of an OpenAPI
 specification (`example/input/bookstore.pb` created with gnostic) and creates a file descriptor set
-`example/output/output.descr`.
+`example/output/bookstore.descr`.
 
 
 To run the protoc generator:
@@ -28,7 +28,7 @@ To run the protoc generator:
     ./gnostic-protoc-generator -input example/output/bookstore.descr -output example/output/
 
 This command triggers the proto-generator. This generator takes in a file descriptor set
-`example/output/output.descr` and generates a protocol buffer definition (`example/output/output.proto`)
+`example/output/bookstore.descr` and generates a protocol buffer definition (`example/output/bookstore.proto`)
 
 
 ## What conversions are currently supported?
