@@ -20,6 +20,7 @@ import (
 	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	surface_v1 "github.com/googleapis/gnostic/surface"
 	"google.golang.org/genproto/googleapis/api/annotations"
+	"log"
 	"strings"
 )
 
@@ -110,7 +111,8 @@ func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) 
 
 			protoType, err := getProtoTypeForField(f)
 			if err != nil {
-				return err
+				log.Printf(err.Error())
+				continue
 			}
 
 			fieldDescr := &dpb.FieldDescriptorProto{
@@ -299,8 +301,8 @@ func getHttpRuleForMethod(method *surface_v1.Method, body *string) annotations.H
 	return httpRule
 }
 
-// Tries to find a dpb.FieldDescriptorProto_Type for 'f'. If no protobuf type exists we have
-// to stop with error.
+// Tries to find a dpb.FieldDescriptorProto_Type for 'f'. If no protobuf type exists we
+// return an error.
 func getProtoTypeForField(f *surface_v1.Field) (*dpb.FieldDescriptorProto_Type, error) {
 	// Let's see if we can get the type from f.format
 	if protoType, ok := protoBufTypes[f.Format]; ok {
@@ -324,7 +326,7 @@ func getProtoTypeForField(f *surface_v1.Field) (*dpb.FieldDescriptorProto_Type, 
 	}
 
 	// Panic!
-	return nil, errors.New("Unable to find a protobuf type for the surface model type ")
+	return nil, errors.New("Unable to find a protobuf type for the surface model type: " + f.Type)
 
 }
 
@@ -335,6 +337,9 @@ func getNameForField(f *surface_v1.Field) *string {
 
 	if name == "200" {
 		name = "ok"
+	}
+	if name == "400" {
+		name = "badRequest"
 	}
 	return &name
 }
