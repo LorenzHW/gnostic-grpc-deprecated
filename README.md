@@ -25,7 +25,7 @@ specification (`example/input/bookstore.pb` created with gnostic) and creates a 
 
 To run the protoc generator:
  
-    ./gnostic-protoc-generator -input example/output/output.descr -output example/output/
+    ./gnostic-protoc-generator -input example/output/bookstore.descr -output example/output/
 
 This command triggers the proto-generator. This generator takes in a file descriptor set
 `example/output/output.descr` and generates a protocol buffer definition (`example/output/output.proto`)
