@@ -1,0 +1,131 @@
+
+Ù
+petstorepetstoregoogle/api/annotations.protogoogle/protobuf/empty.proto"h
+Order
+
+id (
+petid (
+quantity (
+shipdate (	
+status (	
+complete ("$
+Category
+
+id (
+name (	"ç
+User
+
+id (
+username (	
+	firstname (	
+lastname (	
+email (	
+password (	
+phone (	
+
+userstatus ("
+Tag
+
+id (
+name (	"q
+Pet
+
+id (
+category (2Category
+name (	
+	photourls (	
+tags (2Tag
+status (	":
+ApiResponse
+code (
+type (	
+message (	"
+Pet
+pet (2Pet"
+	UserArray
+user (2User"'
+UpdatePetParameters
+pet (2Pet"$
+AddPetParameters
+pet (2Pet",
+FindPetsByStatusParameters
+status (	",
+FindPetsByStatusResponses
+ok (2Pet"(
+FindPetsByTagsParameters
+tags (	"*
+FindPetsByTagsResponses
+ok (2Pet"%
+GetPetByIdParameters
+petid ("&
+GetPetByIdResponses
+ok (2Pet",
+UpdatePetWithFormParameters
+petid ("5
+DeletePetParameters
+api_key (	
+petid ("%
+UploadFileParameters
+petid (".
+UploadFileResponses
+ok (2ApiResponse"
+GetInventoryResponses",
+PlaceOrderParameters
+order (2Order"(
+PlaceOrderResponses
+ok (2Order")
+GetOrderByIdParameters
+orderid ("*
+GetOrderByIdResponses
+ok (2Order"(
+DeleteOrderParameters
+orderid ("*
+CreateUserParameters
+user (2User"C
+#CreateUsersWithArrayInputParameters
+	userarray (2	UserArray"B
+"CreateUsersWithListInputParameters
+	userarray (2	UserArray"9
+LoginUserParameters
+username (	
+password (	" 
+LoginUserResponses
+
+ok (	"+
+GetUserByNameParameters
+username (	"*
+GetUserByNameResponses
+ok (2User"<
+UpdateUserParameters
+username (	
+user (2User"(
+DeleteUserParameters
+username (	2ü
+PetstoreJ
+	UpdatePetUpdatePetParametersgoogle.protobuf.Empty"Ç”‰ì:pet/petD
+AddPetAddPetParametersgoogle.protobuf.Empty"Ç”‰ì:pet"/petd
+FindPetsByStatusFindPetsByStatusParametersFindPetsByStatusResponses"Ç”‰ì/pet/findByStatus\
+FindPetsByTagsFindPetsByTagsParametersFindPetsByTagsResponses"Ç”‰ì/pet/findByTagsM
+
+GetPetByIdGetPetByIdParametersGetPetByIdResponses"Ç”‰ì/pet/{petId}]
+UpdatePetWithFormUpdatePetWithFormParametersgoogle.protobuf.Empty"Ç”‰ì"/pet/{petId}M
+	DeletePetDeletePetParametersgoogle.protobuf.Empty"Ç”‰ì*/pet/{petId}Y
+
+UploadFileUploadFileParametersUploadFileResponses" Ç”‰ì"/pet/{petId}/uploadImageV
+GetInventorygoogle.protobuf.EmptyGetInventoryResponses"Ç”‰ì/store/inventoryT
+
+PlaceOrderPlaceOrderParametersPlaceOrderResponses"Ç”‰ì:order"/store/order]
+GetOrderByIdGetOrderByIdParametersGetOrderByIdResponses"Ç”‰ì/store/order/{orderId}[
+DeleteOrderDeleteOrderParametersgoogle.protobuf.Empty"Ç”‰ì*/store/order/{orderId}N
+
+CreateUserCreateUserParametersgoogle.protobuf.Empty"Ç”‰ì:user"/userÅ
+CreateUsersWithArrayInput#CreateUsersWithArrayInputParametersgoogle.protobuf.Empty"(Ç”‰ì":	userarray"/user/createWithArray~
+CreateUsersWithListInput"CreateUsersWithListInputParametersgoogle.protobuf.Empty"'Ç”‰ì!:	userarray"/user/createWithListI
+	LoginUserLoginUserParametersLoginUserResponses"Ç”‰ì/user/loginP
+
+LogoutUsergoogle.protobuf.Emptygoogle.protobuf.Empty"Ç”‰ì/user/logoutZ
+GetUserByNameGetUserByNameParametersGetUserByNameResponses"Ç”‰ì/user/{username}Y
+
+UpdateUserUpdateUserParametersgoogle.protobuf.Empty"Ç”‰ì:user/user/{username}S
+
+DeleteUserDeleteUserParametersgoogle.protobuf.Empty"Ç”‰ì*/user/{username}bproto3

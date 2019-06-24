@@ -16,19 +16,19 @@ To run this plugin run following commands inside this directory:
     
 To run the descriptor generator:
     
-    ./gnostic-protoc-generator -input example/input/bookstore.pb -output example/output/
+    ./gnostic-protoc-generator -input examples/bookstore/input/bookstore.pb -output examples/bookstore/output/
 
 This command triggers the descriptor-generator. The generator takes in a binary format of an OpenAPI
-specification (`example/input/bookstore.pb` created with gnostic) and creates a file descriptor set
-`example/output/bookstore.descr`.
+specification (`examples/bookstore/input/bookstore.pb` created with gnostic) and creates a file descriptor set
+`examples/bookstore/output/bookstore.descr`.
 
 
 To run the protoc generator:
  
-    ./gnostic-protoc-generator -input example/output/bookstore.descr -output example/output/
+    ./gnostic-protoc-generator -input examples/bookstore/output/bookstore.descr -output examples/bookstore/output/
 
 This command triggers the proto-generator. This generator takes in a file descriptor set
-`example/output/bookstore.descr` and generates a protocol buffer definition (`example/output/bookstore.proto`)
+`examples/bookstore/output/bookstore.descr` and generates a protocol buffer definition (`examples/bookstore/output/bookstore.proto`)
 
 
 ## What conversions are currently supported?
