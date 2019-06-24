@@ -30,7 +30,11 @@ func RunDescriptorGenerator() {
 	env, err := plugins.NewEnvironment()
 	env.RespondAndExitIfError(err)
 
-	packageName, err := resolvePackageName(env.Request.OutputPath)
+	fileName := env.Request.SourceName
+	extension := filepath.Ext(fileName)
+	fileName = fileName[0 : len(fileName)-len(extension)]
+
+	packageName, err := resolvePackageName(fileName)
 	env.RespondAndExitIfError(err)
 
 	// Use the name used to run the plugin to decide which files to generate.
