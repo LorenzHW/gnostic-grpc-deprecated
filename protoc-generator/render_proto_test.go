@@ -75,10 +75,9 @@ func WriteFile(output string, protoData []byte) {
 func checkContents(t *testing.T, actualContents string, goldenFileName string) {
 	goldenFileName = filepath.Join(testFilesDirectory, goldenFileName)
 
-	//if regenerateMode {
-	//	err := ioutil.WriteFile(goldenFileName, []byte(actualContents), 0666)
-	//	Ok(t, err)
-	//}
+	if regenerateMode {
+		WriteFile(goldenFileName, []byte(actualContents))
+	}
 
 	// verify that output matches golden test files
 	b, err := ioutil.ReadFile(goldenFileName)
