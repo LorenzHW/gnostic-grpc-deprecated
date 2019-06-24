@@ -3,6 +3,8 @@
 # gnostic Protos Generator Plugin
 [GSoC 2019 project](https://summerofcode.withgoogle.com/projects/#5244822191865856)
 
+This tool converts an OpenAPI v3.0 API description into an equivalent .proto representation.
+
 ## High level overview:
 ![alt text](https://drive.google.com/uc?export=view&id=1tqDvZLiXK40ISK_LgINQGsno9-MymRQP "High Level Overview")
 
