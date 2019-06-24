@@ -30,8 +30,6 @@ message TestResponseReferenceResponses {
 
 message TestResponseMultipleContentResponses {
   Person ok = 1;
-
-  Person ok = 2;
 }
 
 message TestResponseComponentReferenceResponses {

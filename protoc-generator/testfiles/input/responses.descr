@@ -1,5 +1,5 @@
 
-ž
+Š
 testPackagetestPackagegoogle/api/annotations.protogoogle/protobuf/empty.proto"B
 Person
 
@@ -13,10 +13,9 @@
 
 ok (	"4
 TestResponseReferenceResponses
-ok (2Person"N
+ok (2Person":
 $TestResponseMultipleContentResponses
-ok (2Person
-ok (2Person"?
+ok (2Person"?
 'TestResponseComponentReferenceResponses
 ok (2Response2â
 TestPackagee
