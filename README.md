@@ -8,6 +8,9 @@ This tool converts an OpenAPI v3.0 API description into an equivalent .proto rep
 ## High level overview:
 ![alt text](https://drive.google.com/uc?export=view&id=1tqDvZLiXK40ISK_LgINQGsno9-MymRQP "High Level Overview")
 
+Under the hood the generator first creates a FileDescriptorSet (`bookststore.descr`) from the input
+data. Then [protoreflect](https://github.com/jhump/protoreflect/) is used to print the output file. 
+
 ## Prerequisite:
 Use [gnostic](https://github.com/googleapis/gnostic) to generate `examples/bookstore/bookstore.pb`
 by running following command inside this directory:
