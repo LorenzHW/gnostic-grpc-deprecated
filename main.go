@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	generator.RunDescriptorGenerator()
+	generator.RunProtoGenerator()
 }

@@ -74,7 +74,7 @@ func TestFileDescriptorGeneratorResponses(t *testing.T) {
 
 func runGeneratorWithoutEnvironment(input string) ([]byte, error) {
 	surfaceModel := buildSurfaceModel(input)
-	r, _ := NewDescriptorRenderer(surfaceModel)
+	r, _ := NewRenderer(surfaceModel)
 	r.Package = "testPackage"
 
 	fdSet, err := r.RunFileDescriptorSetGenerator()

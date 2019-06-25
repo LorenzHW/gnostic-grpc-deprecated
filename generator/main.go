@@ -26,7 +26,7 @@ import (
 )
 
 // This is the main function for the code generation plugin.
-func RunDescriptorGenerator() {
+func RunProtoGenerator() {
 	env, err := plugins.NewEnvironment()
 	env.RespondAndExitIfError(err)
 
@@ -44,7 +44,7 @@ func RunDescriptorGenerator() {
 			err = proto.Unmarshal(model.Value, surfaceModel)
 			if err == nil {
 				// Create the renderer.
-				renderer, err := NewDescriptorRenderer(surfaceModel)
+				renderer, err := NewRenderer(surfaceModel)
 				renderer.Package = packageName
 				env.RespondAndExitIfError(err)
 

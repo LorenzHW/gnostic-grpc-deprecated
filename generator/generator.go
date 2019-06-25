@@ -475,13 +475,3 @@ func getOpenAPIScalarTypes() map[string]bool {
 		"boolean": true,
 	}
 }
-
-// LONG-TERM PROBLEMS
-//TODO: handle enum. Not sure if possible, because of
-//TODO: https://github.com/googleapis/googleapis/blob/a8ee1416f4c588f2ab92da72e7c1f588c784d3e6/google/api/http.proto#L62
-//TODO: Additional Properties response: Should it be represented inside .proto?
-//TODO: Having references inside (like: https://github.com/googleapis/gnostic/issues/108#issue-400492364) --> protoreflect won't work
-
-//TODO: Sample implementation of ENUM's for surface model
-//TODO: Merge two generators
-//TODO: Open long term issues inside repository

@@ -32,8 +32,8 @@ type Renderer struct {
 	Package string // package name
 }
 
-// NewDescriptorRenderer creates a renderer.
-func NewDescriptorRenderer(model *surface.Model) (renderer *Renderer, err error) {
+// NewRenderer creates a renderer.
+func NewRenderer(model *surface.Model) (renderer *Renderer, err error) {
 	renderer = &Renderer{}
 	renderer.Model = model
 	return renderer, nil
@@ -48,7 +48,7 @@ func (renderer *Renderer) Render(response *plugins.Response, fileName string) (e
 		return err
 	}
 
-	if false { //TODO: If we wan't to generate the descriptor file, we need an additional flag here!
+	if false { //TODO: If we want to generate the descriptor file, we need an additional flag here!
 		f, err := renderer.RenderDescriptor(fdSet)
 		if err != nil {
 			return err
