@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // descriptor_renderer generates a FileDescriptorSet from a gnostic output file.
-package descriptor_generator
+package generator
 
 import (
 	"errors"

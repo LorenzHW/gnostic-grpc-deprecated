@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package descriptor_generator
+package generator
 
 import (
 	"github.com/golang/protobuf/proto"
@@ -42,27 +42,27 @@ func NewDescriptorRenderer(model *surface.Model) (renderer *Renderer, err error)
 // Generate runs the renderer to generate the named files.
 func (renderer *Renderer) Render(response *plugins.Response, fileName string) (err error) {
 	file := &plugins.File{Name: fileName}
-	fdSet, err := renderer.BuildFileDescriptorSet()
+	fdSet, err := renderer.RunFileDescriptorSetGenerator()
 
 	if err != nil {
 		return err
 	}
 
 	if false { //TODO: If we wan't to generate the descriptor file, we need an additional flag here!
-		f, err := renderer.renderDescriptor(fdSet)
+		f, err := renderer.RenderDescriptor(fdSet)
 		if err != nil {
 			return err
 		}
 		response.Files = append(response.Files, f)
 	}
 
-	file.Data, err = renderer.renderProto(fdSet)
+	file.Data, err = renderer.RenderProto(fdSet)
 	response.Files = append(response.Files, file)
 
 	return
 }
 
-func (renderer *Renderer) renderProto(fdSet *dpb.FileDescriptorSet) ([]byte, error) {
+func (renderer *Renderer) RenderProto(fdSet *dpb.FileDescriptorSet) ([]byte, error) {
 
 	// Creates a protoreflect FileDescriptor, which is then used for printing.
 	prFd, err := prDesc.CreateFileDescriptorFromSet(fdSet)
@@ -83,7 +83,7 @@ func (renderer *Renderer) renderProto(fdSet *dpb.FileDescriptorSet) ([]byte, err
 	return f.Bytes(), err
 }
 
-func (renderer *Renderer) renderDescriptor(fdSet *dpb.FileDescriptorSet) (*plugins.File, error) {
+func (renderer *Renderer) RenderDescriptor(fdSet *dpb.FileDescriptorSet) (*plugins.File, error) {
 	fdSetData, err := proto.Marshal(fdSet)
 	if err != nil {
 		return nil, err

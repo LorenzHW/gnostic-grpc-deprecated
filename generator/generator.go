@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package descriptor_generator
+package generator
 
 import (
 	"errors"
@@ -37,7 +37,7 @@ var openAPIScalarTypes = getOpenAPIScalarTypes()
 // 		1. buildDependencies is called to add dependencies to a FileDescriptorProto
 //		2. buildMessagesFromTypes is called to create all messages which will be rendered in .proto
 //		3. buildServiceFromMethods is called to create a RPC service which will be rendered in .proto
-func (renderer *Renderer) BuildFileDescriptorSet() (fdSet *dpb.FileDescriptorSet, err error) {
+func (renderer *Renderer) RunFileDescriptorSetGenerator() (fdSet *dpb.FileDescriptorSet, err error) {
 	syntax := "proto3"
 
 	fdProto := &dpb.FileDescriptorProto{
@@ -475,3 +475,13 @@ func getOpenAPIScalarTypes() map[string]bool {
 		"boolean": true,
 	}
 }
+
+// LONG-TERM PROBLEMS
+//TODO: handle enum. Not sure if possible, because of
+//TODO: https://github.com/googleapis/googleapis/blob/a8ee1416f4c588f2ab92da72e7c1f588c784d3e6/google/api/http.proto#L62
+//TODO: Additional Properties response: Should it be represented inside .proto?
+//TODO: Having references inside (like: https://github.com/googleapis/gnostic/issues/108#issue-400492364) --> protoreflect won't work
+
+//TODO: Sample implementation of ENUM's for surface model
+//TODO: Merge two generators
+//TODO: Open long term issues inside repository
