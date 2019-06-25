@@ -8,6 +8,12 @@ This tool converts an OpenAPI v3.0 API description into an equivalent .proto rep
 ## High level overview:
 ![alt text](https://drive.google.com/uc?export=view&id=1tqDvZLiXK40ISK_LgINQGsno9-MymRQP "High Level Overview")
 
+## Prerequisite:
+Use [gnostic](https://github.com/googleapis/gnostic) to generate `examples/bookstore/input/bookstore.pb`
+by running following command inside this directory:
+    
+    gnostic --pb-out=examples/bookstore/input examples/bookstore/input/bookstore.yaml
+
 ## How to use:
 
 To run this plugin run following commands inside this directory:
