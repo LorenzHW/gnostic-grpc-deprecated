@@ -1,64 +1,0 @@
-
-ý
-	bookstore	bookstoregoogle/api/annotations.protogoogle/protobuf/empty.proto"3
-Book
-author (	
-name (	
-title (	"(
-ListBooksResponse
-books (2Book"-
-ListShelvesResponse
-shelves (2Shelf"$
-Shelf
-name (	
-theme (	"&
-Error
-code (
-message (	"7
-ListShelvesResponses
-ok (2ListShelvesResponse"-
-CreateShelfParameters
-shelf (2Shelf")
-CreateShelfResponses
-ok (2Shelf"#
-GetShelfParameters
-shelf (">
-GetShelfResponses
-ok (2Shelf
-default (2Error"&
-DeleteShelfParameters
-shelf ("$
-ListBooksParameters
-shelf ("K
-ListBooksResponses
-ok (2ListBooksResponse
-default (2Error"9
-CreateBookParameters
-shelf (
-book (2Book"?
-CreateBookResponses
-ok (2Book
-default (2Error"0
-GetBookParameters
-shelf (
-book ("<
-GetBookResponses
-ok (2Book
-default (2Error"3
-DeleteBookParameters
-shelf (
-book (2‘
-	BookstoreL
-ListShelvesgoogle.protobuf.EmptyListShelvesResponses"‚Óä“
-/shelvesS
-CreateShelfCreateShelfParametersCreateShelfResponses"‚Óä“:shelf"/shelvesO
-DeleteShelvesgoogle.protobuf.Emptygoogle.protobuf.Empty"‚Óä“
-*/shelvesK
-GetShelfGetShelfParametersGetShelfResponses"‚Óä“/shelves/{shelf}U
-DeleteShelfDeleteShelfParametersgoogle.protobuf.Empty"‚Óä“*/shelves/{shelf}T
-	ListBooksListBooksParametersListBooksResponses"‚Óä“/shelves/{shelf}/books]
-
-CreateBookCreateBookParametersCreateBookResponses"$‚Óä“:book"/shelves/{shelf}/booksU
-GetBookGetBookParametersGetBookResponses"%‚Óä“/shelves/{shelf}/books/{book}`
-
-DeleteBookDeleteBookParametersgoogle.protobuf.Empty"%‚Óä“*/shelves/{shelf}/books/{book}bproto3

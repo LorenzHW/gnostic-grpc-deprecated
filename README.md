@@ -9,10 +9,10 @@ This tool converts an OpenAPI v3.0 API description into an equivalent .proto rep
 ![alt text](https://drive.google.com/uc?export=view&id=1tqDvZLiXK40ISK_LgINQGsno9-MymRQP "High Level Overview")
 
 ## Prerequisite:
-Use [gnostic](https://github.com/googleapis/gnostic) to generate `examples/bookstore/input/bookstore.pb`
+Use [gnostic](https://github.com/googleapis/gnostic) to generate `examples/bookstore/bookstore.pb`
 by running following command inside this directory:
     
-    gnostic --pb-out=examples/bookstore/input examples/bookstore/input/bookstore.yaml
+    gnostic --pb-out=examples/bookstore examples/bookstore/bookstore.yaml
 
 ## How to use:
 
@@ -20,22 +20,13 @@ To run this plugin run following commands inside this directory:
 
     go build
     
-To run the descriptor generator:
+To run the generator:
     
-    ./gnostic-protoc-generator -input examples/bookstore/input/bookstore.pb -output examples/bookstore/output/
+    ./gnostic-protoc-generator -input examples/bookstore/bookstore.pb -output examples/bookstore
 
-This command triggers the descriptor-generator. The generator takes in a binary format of an OpenAPI
-specification (`examples/bookstore/input/bookstore.pb` created with gnostic) and creates a file descriptor set
-`examples/bookstore/output/bookstore.descr`.
-
-
-To run the protoc generator:
- 
-    ./gnostic-protoc-generator -input examples/bookstore/output/bookstore.descr -output examples/bookstore/output/
-
-This command triggers the proto-generator. This generator takes in a file descriptor set
-`examples/bookstore/output/bookstore.descr` and generates a protocol buffer definition (`examples/bookstore/output/bookstore.proto`)
-
+The generator takes in a binary format of an OpenAPI specification 
+(`examples/bookstore/bookstore.pb` created with gnostic) and generates a protocol buffer definition
+`examples/bookstore/bookstore.proto`.
 
 ## What conversions are currently supported?
 
