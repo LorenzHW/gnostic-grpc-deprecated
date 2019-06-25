@@ -1,35 +1,0 @@
-
-ø
-
-testPackagetestPackagegoogle/api/annotations.protogoogle/protobuf/empty.proto"&
-Error
-code (
-message (	"B
-Person
-
-id (
-age (
-name (	
-	photourls (	"$
-Response
-response (2Person")
-TestResponseNativeResponses
-
-ok (	"4
-TestResponseReferenceResponses
-ok (2Person":
-$TestResponseMultipleContentResponses
-ok (2Person"?
-"TestResponse400StatusCodeResponses
-
-badRequest (2Error"+
-)TestResponseAdditionalPropertiesResponses"?
-'TestResponseComponentReferenceResponses
-ok (2Response2Å
-TestPackagee
-TestResponseNativegoogle.protobuf.EmptyTestResponseNativeResponses"Ç”‰ì/testResponseNativen
-TestResponseReferencegoogle.protobuf.EmptyTestResponseReferenceResponses"Ç”‰ì/testResponseReferenceÄ
-TestResponseMultipleContentgoogle.protobuf.Empty$TestResponseMultipleContentResponses"$Ç”‰ì/testResponseMultipleContentz
-TestResponse400StatusCodegoogle.protobuf.Empty"TestResponse400StatusCodeResponses""Ç”‰ì/testResponse400StatusCodeè
- TestResponseAdditionalPropertiesgoogle.protobuf.Empty)TestResponseAdditionalPropertiesResponses")Ç”‰ì#!/testResponseAdditionalPropertiesâ
-TestResponseComponentReferencegoogle.protobuf.Empty'TestResponseComponentReferenceResponses"'Ç”‰ì!/testResponseComponentReferencebproto3

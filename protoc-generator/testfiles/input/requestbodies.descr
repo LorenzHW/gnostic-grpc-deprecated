@@ -1,18 +1,0 @@
-
-Ä
-testPackagetestPackagegoogle/api/annotations.protogoogle/protobuf/empty.proto"B
-Person
-
-id (
-age (
-name (	
-	photourls (	"%
-RequestBody
-person (2Person"3
-TestRequestBodyParameters
-person (2Person"F
-"TestRequestBodyReferenceParameters 
-requestbody (2RequestBody2ü
-TestPackagee
-TestRequestBodyTestRequestBodyParametersgoogle.protobuf.Empty" ‚Óä“:person/testRequestBody…
-TestRequestBodyReference"TestRequestBodyReferenceParametersgoogle.protobuf.Empty".‚Óä“(:requestbody/testRequestBodyReferencebproto3
