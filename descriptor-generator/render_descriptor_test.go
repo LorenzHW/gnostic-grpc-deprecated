@@ -77,7 +77,7 @@ func runDescriptorGeneratorWithoutEnv(input string) ([]byte, error) {
 	surfaceModel := buildSurfaceModel(input)
 	descriptorRenderer, _ := NewDescriptorRenderer(surfaceModel)
 	descriptorRenderer.Package = packageName
-	fileDescriptorSetData, err := descriptorRenderer.RenderFileDescriptorSet()
+	fileDescriptorSetData, err := descriptorRenderer.BuildFileDescriptorSet()
 	return fileDescriptorSetData, err
 }
 

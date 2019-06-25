@@ -16,9 +16,12 @@ package descriptor_generator
 
 import (
 	"errors"
+	"github.com/golang/protobuf/descriptor"
 	"github.com/golang/protobuf/proto"
 	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"github.com/golang/protobuf/ptypes/empty"
 	surface_v1 "github.com/googleapis/gnostic/surface"
+
 	"google.golang.org/genproto/googleapis/api/annotations"
 	"log"
 	"strings"
@@ -34,45 +37,89 @@ var openAPIScalarTypes = getOpenAPIScalarTypes()
 // 		1. buildDependencies is called to add dependencies to a FileDescriptorProto
 //		2. buildMessagesFromTypes is called to create all messages which will be rendered in .proto
 //		3. buildServiceFromMethods is called to create a RPC service which will be rendered in .proto
-func (renderer *Renderer) RenderFileDescriptorSet() (res []byte, err error) {
+func (renderer *Renderer) BuildFileDescriptorSet() (fdSet *dpb.FileDescriptorSet, err error) {
 	syntax := "proto3"
 
-	fileDescriptorProto := &dpb.FileDescriptorProto{
+	fdProto := &dpb.FileDescriptorProto{
 		Name:    &renderer.Package,
 		Package: &renderer.Package,
 		Syntax:  &syntax,
 	}
-	fileDescrSet := dpb.FileDescriptorSet{
-		File: []*dpb.FileDescriptorProto{fileDescriptorProto},
+	fdSet = &dpb.FileDescriptorSet{
+		File: []*dpb.FileDescriptorProto{fdProto},
 	}
 
-	buildDependencies(fileDescriptorProto)
+	buildDependencies(fdSet)
 
-	err = buildMessagesFromTypes(fileDescriptorProto, renderer)
+	err = buildMessagesFromTypes(fdProto, renderer)
 	if err != nil {
 		return nil, err
 	}
 
-	err = buildServiceFromMethods(fileDescriptorProto, renderer)
+	err = buildServiceFromMethods(fdProto, renderer)
 	if err != nil {
 		return nil, err
 	}
 
-	res, err = proto.Marshal(&fileDescrSet)
-	if err != nil {
-		return nil, err
-	}
-	return res, err
+	return fdSet, err
 }
 
-// Adds necessary dependencies to 'descr'. annotations.proto for gRPC-HTTP transcoding and empty.proto
-// for RPC methods without parameters.
-func buildDependencies(descr *dpb.FileDescriptorProto) {
-	dependencies := []string{"google/api/annotations.proto", "google/protobuf/empty.proto"}
+// Protoreflect needs all the dependencies that are used inside of the initial FileDescriptorProto
+// to work properly. Those dependencies are google/protobuf/empty.proto, google/api/annotations.proto,
+// and "google/protobuf/descriptor.proto". For all those dependencies the corresponding
+// FileDescriptorProto has to be added to the FileDescriptorSet. Protoreflect won't work
+// if a reference is missing.
+func buildDependencies(fdSet *dpb.FileDescriptorSet) {
+	// Dependency to "google/protobuf/empty.proto" for RPC methods without any request / response
+	// parameters.
+	e := empty.Empty{}
+	fd, _ := descriptor.ForMessage(&e)
 
-	for _, dep := range dependencies {
-		descr.Dependency = append(descr.Dependency, dep)
+	// Dependency to google/api/annotations.proto for gRPC-HTTP transcoding. Here a couple of problems arise:
+	// 1. Problem: 	We cannot call descriptor.ForMessage(&annotations.E_Http), which would be our
+	//				required dependency. However, we can call descriptor.ForMessage(&http) and
+	//				then construct the extension manually.
+	// 2. Problem: 	The name is set wrong.
+	// 3. Problem: 	google/api/annotations.proto has a dependency to google/protobuf/descriptor.proto.
+	http := annotations.Http{}
+	fd2, _ := descriptor.ForMessage(&http)
+
+	extensionName := "http"
+	n := "google/api/annotations.proto"
+	l := dpb.FieldDescriptorProto_LABEL_OPTIONAL
+	t := dpb.FieldDescriptorProto_TYPE_MESSAGE
+	tName := "google.api.HttpRule"
+	extendee := ".google.protobuf.MethodOptions"
+
+	httpExtension := &dpb.FieldDescriptorProto{
+		Name:     &extensionName,
+		Number:   &annotations.E_Http.Field,
+		Label:    &l,
+		Type:     &t,
+		TypeName: &tName,
+		Extendee: &extendee,
 	}
+
+	fd2.Extension = append(fd2.Extension, httpExtension)                        // 1. Problem
+	fd2.Name = &n                                                               // 2. Problem
+	fd2.Dependency = append(fd2.Dependency, "google/protobuf/descriptor.proto") //3.rd Problem
+
+	// Dependency to google/protobuf/descriptor.proto to address 3.rd Problem. FileDescriptorProto
+	// still needs to be added otherwise protoreflect won't work.
+	fdp := dpb.FieldDescriptorProto{}
+	fd3, _ := descriptor.ForMessage(&fdp)
+
+	// At last, we need to add the dependencies to the FileDescriptorProto that will get rendered.
+	dependencies := []string{"google/api/annotations.proto", "google/protobuf/empty.proto"}
+	fdProto := fdSet.File[0]
+	for _, dep := range dependencies {
+		fdProto.Dependency = append(fdProto.Dependency, dep)
+	}
+
+	// According to the documentation of prDesc.CreateFileDescriptorFromSet the file I want to print
+	// needs to be at the end of the array. All other FileDescriptorProto are dependencies.
+	fdSet.File = append([]*dpb.FileDescriptorProto{fd, fd2, fd3}, fdSet.File...)
+
 }
 
 // Builds protobuf messages from the surface model types. If the type is a RPC request parameter

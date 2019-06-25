@@ -37,13 +37,6 @@ func RunDescriptorGenerator() {
 	packageName, err := resolvePackageName(fileName)
 	env.RespondAndExitIfError(err)
 
-	// Use the name used to run the plugin to decide which files to generate.
-	var files []string
-	switch {
-	default:
-		files = []string{packageName + ".descr"}
-	}
-
 	for _, model := range env.Request.Models {
 		switch model.TypeUrl {
 		case "surface.v1.Model":
@@ -56,7 +49,7 @@ func RunDescriptorGenerator() {
 				env.RespondAndExitIfError(err)
 
 				// Run the renderer to generate files and add them to the response object.
-				err = renderer.Render(env.Response, files)
+				err = renderer.Render(env.Response, packageName+".proto")
 				env.RespondAndExitIfError(err)
 
 				// Return with success.

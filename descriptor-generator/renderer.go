@@ -15,9 +15,12 @@
 package descriptor_generator
 
 import (
-	"fmt"
+	"github.com/golang/protobuf/proto"
+	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	plugins "github.com/googleapis/gnostic/plugins"
 	surface "github.com/googleapis/gnostic/surface"
+	prDesc "github.com/jhump/protoreflect/desc"
+	prPrint "github.com/jhump/protoreflect/desc/protoprint"
 	_ "os"
 )
 
@@ -37,14 +40,56 @@ func NewDescriptorRenderer(model *surface.Model) (renderer *Renderer, err error)
 }
 
 // Generate runs the renderer to generate the named files.
-func (renderer *Renderer) Render(response *plugins.Response, files []string) (err error) {
-	for _, filename := range files {
-		file := &plugins.File{Name: filename}
-		file.Data, err = renderer.RenderFileDescriptorSet()
-		if err != nil {
-			response.Errors = append(response.Errors, fmt.Sprintf("ERROR %v", err))
-		}
-		response.Files = append(response.Files, file)
+func (renderer *Renderer) Render(response *plugins.Response, fileName string) (err error) {
+	file := &plugins.File{Name: fileName}
+	fdSet, err := renderer.BuildFileDescriptorSet()
+
+	if err != nil {
+		return err
 	}
+
+	if false { //TODO: If we wan't to generate the descriptor file, we need an additional flag here!
+		f, err := renderer.renderDescriptor(fdSet)
+		if err != nil {
+			return err
+		}
+		response.Files = append(response.Files, f)
+	}
+
+	file.Data, err = renderer.renderProto(fdSet)
+	response.Files = append(response.Files, file)
+
 	return
+}
+
+func (renderer *Renderer) renderProto(fdSet *dpb.FileDescriptorSet) ([]byte, error) {
+
+	// Creates a protoreflect FileDescriptor, which is then used for printing.
+	prFd, err := prDesc.CreateFileDescriptorFromSet(fdSet)
+	if err != nil {
+		return nil, err
+	}
+
+	// Print the protoreflect FileDescriptor.
+	p := prPrint.Printer{}
+	res, err := p.PrintProtoToString(prFd)
+	if err != nil {
+		return nil, err
+	}
+
+	f := NewLineWriter()
+	f.WriteLine(res)
+
+	return f.Bytes(), err
+}
+
+func (renderer *Renderer) renderDescriptor(fdSet *dpb.FileDescriptorSet) (*plugins.File, error) {
+	fdSetData, err := proto.Marshal(fdSet)
+	if err != nil {
+		return nil, err
+	}
+
+	descriptorFile := &plugins.File{Name: renderer.Package + ".descr"}
+	descriptorFile.Data = fdSetData
+	return descriptorFile, nil
 }
