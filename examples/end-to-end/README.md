@@ -1,4 +1,4 @@
-###End-to-end flow
+### End-to-end flow
 
 This example demonstrates an end-to-end flow for generating a gRPC API with HTTP transcoding from an
 OpenAPI description.
