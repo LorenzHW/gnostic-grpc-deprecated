@@ -30,6 +30,8 @@ and [gRPC](https://grpc.io/)
 For simplicity lets create a temporary environment variable inside your terminal:
     
     export ANNOTATIONS="third-party/googleapis"
+    
+In order for this tutorial to work you should work inside this directory under `GOPATH`.
 
 #### 1. Step
 
