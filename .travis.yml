@@ -8,4 +8,4 @@ sudo: false
 language: go
 
 script:
-  - go test ./generator/
+  - go test -v ./...
