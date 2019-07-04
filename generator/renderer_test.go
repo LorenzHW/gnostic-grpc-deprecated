@@ -78,11 +78,12 @@ func runGeneratorWithoutEnvironment(input string) ([]byte, error) {
 	r.Package = "testPackage"
 
 	fdSet, err := r.RunFileDescriptorSetGenerator()
+	r.FdSet = fdSet
 	if err != nil {
 		return nil, err
 	}
-	b, err := r.RenderProto(fdSet)
-	return b, err
+	f, err := r.RenderProto("")
+	return f.Data, err
 }
 
 func buildSurfaceModel(input string) *surface.Model {

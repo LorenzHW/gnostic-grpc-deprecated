@@ -24,11 +24,12 @@ import (
 	_ "os"
 )
 
-// Renderer generates code for a surface.Model.
+// Renderer generates a .proto file based on the information inside Model.
 type Renderer struct {
-	// TODO: Maybe create a util/generic package(?),
-	// TODO: because same struct is used in gnostic-go-generator
-	Model   *surface.Model
+	// The model holds the necessary information from the OpenAPI description.
+	Model *surface.Model
+	// The FileDescriptorSet that will be printed with protoreflect
+	FdSet   *dpb.FileDescriptorSet
 	Package string // package name
 }
 
@@ -41,31 +42,29 @@ func NewRenderer(model *surface.Model) (renderer *Renderer, err error) {
 
 // Generate runs the renderer to generate the named files.
 func (renderer *Renderer) Render(response *plugins.Response, fileName string) (err error) {
-	file := &plugins.File{Name: fileName}
-	fdSet, err := renderer.RunFileDescriptorSetGenerator()
+	renderer.FdSet, err = renderer.RunFileDescriptorSetGenerator()
 
 	if err != nil {
 		return err
 	}
 
 	if false { //TODO: If we want to generate the descriptor file, we need an additional flag here!
-		f, err := renderer.RenderDescriptor(fdSet)
+		f, err := renderer.RenderDescriptor()
 		if err != nil {
 			return err
 		}
 		response.Files = append(response.Files, f)
 	}
 
-	file.Data, err = renderer.RenderProto(fdSet)
-	response.Files = append(response.Files, file)
+	f, err := renderer.RenderProto(fileName)
+	response.Files = append(response.Files, f)
 
-	return
+	return err
 }
 
-func (renderer *Renderer) RenderProto(fdSet *dpb.FileDescriptorSet) ([]byte, error) {
-
+func (renderer *Renderer) RenderProto(fileName string) (*plugins.File, error) {
 	// Creates a protoreflect FileDescriptor, which is then used for printing.
-	prFd, err := prDesc.CreateFileDescriptorFromSet(fdSet)
+	prFd, err := prDesc.CreateFileDescriptorFromSet(renderer.FdSet)
 	if err != nil {
 		return nil, err
 	}
@@ -80,11 +79,14 @@ func (renderer *Renderer) RenderProto(fdSet *dpb.FileDescriptorSet) ([]byte, err
 	f := NewLineWriter()
 	f.WriteLine(res)
 
-	return f.Bytes(), err
+	file := &plugins.File{Name: fileName}
+	file.Data = f.Bytes()
+
+	return file, err
 }
 
-func (renderer *Renderer) RenderDescriptor(fdSet *dpb.FileDescriptorSet) (*plugins.File, error) {
-	fdSetData, err := proto.Marshal(fdSet)
+func (renderer *Renderer) RenderDescriptor() (*plugins.File, error) {
+	fdSetData, err := proto.Marshal(renderer.FdSet)
 	if err != nil {
 		return nil, err
 	}
