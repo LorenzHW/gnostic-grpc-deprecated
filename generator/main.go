@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 
 	"github.com/golang/protobuf/proto"
+	openapiv3 "github.com/googleapis/gnostic/OpenAPIv3"
 	plugins "github.com/googleapis/gnostic/plugins"
 	surface "github.com/googleapis/gnostic/surface"
 )
@@ -39,6 +40,14 @@ func RunProtoGenerator() {
 
 	for _, model := range env.Request.Models {
 		switch model.TypeUrl {
+		case "openapi.v3.Document":
+			openAPIdocument := &openapiv3.Document{}
+			err := proto.Unmarshal(model.Value, openAPIdocument)
+
+			if err == nil {
+				featureChecker := NewFeatureChecker(openAPIdocument)
+				env.Response.Messages = featureChecker.Run()
+			}
 		case "surface.v1.Model":
 			surfaceModel := &surface.Model{}
 			err = proto.Unmarshal(model.Value, surfaceModel)
