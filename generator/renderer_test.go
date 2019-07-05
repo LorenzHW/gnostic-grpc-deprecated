@@ -1,8 +1,6 @@
 package generator
 
 import (
-	"github.com/golang/protobuf/proto"
-	openapiv3 "github.com/googleapis/gnostic/OpenAPIv3"
 	surface "github.com/googleapis/gnostic/surface"
 	"io/ioutil"
 	"os"
@@ -87,9 +85,7 @@ func runGeneratorWithoutEnvironment(input string) ([]byte, error) {
 }
 
 func buildSurfaceModel(input string) *surface.Model {
-	apiData, _ := ioutil.ReadFile(input)
-	documentv3 := &openapiv3.Document{}
-	proto.Unmarshal(apiData, documentv3)
+	documentv3 := ReadOpenAPIBinary(input)
 	surfaceModel, _ := surface.NewModelFromOpenAPI3(documentv3)
 	return surfaceModel
 }
