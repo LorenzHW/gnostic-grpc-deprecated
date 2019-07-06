@@ -3,6 +3,7 @@ package generator
 import (
 	openapiv3 "github.com/googleapis/gnostic/OpenAPIv3"
 	plugins "github.com/googleapis/gnostic/plugins"
+	"strings"
 )
 
 type FeatureChecker struct {
@@ -141,22 +142,13 @@ func (c *FeatureChecker) analyzeParameter(paramOrRef *openapiv3.ParameterOrRefer
 
 func (c *FeatureChecker) analyzeSchema(identifier string, schemaOrReference *openapiv3.SchemaOrReference) {
 	if schema := schemaOrReference.GetSchema(); schema != nil {
-		if schema.Nullable || schema.Discriminator != nil || schema.ReadOnly || schema.WriteOnly || schema.Xml != nil ||
-			schema.ExternalDocs != nil || schema.Example != nil || schema.Deprecated || schema.Title != "" ||
-			schema.MultipleOf != 0 || schema.Maximum != 0 || schema.ExclusiveMaximum || schema.Minimum != 0 ||
-			schema.ExclusiveMinimum || schema.MaxLength != 0 || schema.MinLength != 0 || schema.Pattern != "" ||
-			schema.MaxItems != 0 || schema.MinItems != 0 || schema.UniqueItems || schema.MaxProperties != 0 ||
-			schema.MinProperties != 0 || schema.Required != nil || schema.AllOf != nil || schema.OneOf != nil ||
-			schema.AnyOf != nil || schema.Not != nil || schema.Default != nil {
-
+		fields := getNotSupportedSchemaFields(schema)
+		if len(fields) > 0 {
 			msg := &plugins.Message{
 				Code:  "SCHEMAFIELDS",
 				Level: plugins.Message_WARNING,
-				Text: "Fields: Nullable, Discriminator, ReadOnly, WriteOnly, Xml, ExternalDocs, Example, Deprecated, " +
-					"Title, MultipleOf, Maximum, ExclusiveMaximum, Minimum, ExclusiveMinimum, MaxLength, MinLength, " +
-					"Pattern, MaxItems, MinItems, UniqueItems, MaxProperties, MinProperties, Required, AllOf, OneOf, " +
-					"AnyOf, Not, Default are not supported for the schema: " + identifier,
-				Keys: []string{identifier, "Schema"},
+				Text:  "Fields: " + strings.Join(fields, ",") + " are not supported for the schema: " + identifier,
+				Keys:  []string{identifier, "Schema"},
 			}
 			c.messages = append(c.messages, msg)
 		}
@@ -181,6 +173,96 @@ func (c *FeatureChecker) analyzeSchema(identifier string, schemaOrReference *ope
 			c.analyzeSchema("AdditionalPropertiesSchema", additionalProperties.GetSchemaOrReference())
 		}
 	}
+}
+
+func getNotSupportedSchemaFields(schema *openapiv3.Schema) []string {
+	fields := make([]string, 0)
+	if schema.Nullable {
+		fields = append(fields, "Nullable")
+	}
+	if schema.Discriminator != nil {
+		fields = append(fields, "Discriminator")
+	}
+	if schema.ReadOnly {
+		fields = append(fields, "ReadOnly")
+	}
+	if schema.WriteOnly {
+		fields = append(fields, "WriteOnly")
+	}
+	if schema.Xml != nil {
+		fields = append(fields, "Xml")
+	}
+	if schema.ExternalDocs != nil {
+		fields = append(fields, "ExternalDocs")
+	}
+	if schema.Example != nil {
+		fields = append(fields, "Example")
+	}
+	if schema.Deprecated {
+		fields = append(fields, "Deprecated")
+	}
+	if schema.Title != "" {
+		fields = append(fields, "Title")
+	}
+	if schema.MultipleOf != 0 {
+		fields = append(fields, "MultipleOf")
+	}
+	if schema.Maximum != 0 {
+		fields = append(fields, "Maximum")
+	}
+	if schema.ExclusiveMaximum {
+		fields = append(fields, "ExclusiveMaximum")
+	}
+	if schema.Minimum != 0 {
+		fields = append(fields, "Minimum")
+	}
+	if schema.ExclusiveMinimum {
+		fields = append(fields, "ExclusiveMinimum")
+	}
+	if schema.MaxLength != 0 {
+		fields = append(fields, "MaxLength")
+	}
+	if schema.MinLength != 0 {
+		fields = append(fields, "MinLength")
+	}
+	if schema.Pattern != "" {
+		fields = append(fields, "Pattern")
+	}
+	if schema.MaxItems != 0 {
+		fields = append(fields, "MaxItems")
+	}
+	if schema.MinItems != 0 {
+		fields = append(fields, "MinItems")
+	}
+	if schema.UniqueItems {
+		fields = append(fields, "UniqueItems")
+	}
+	if schema.MaxProperties != 0 {
+		fields = append(fields, "MaxProperties")
+	}
+	if schema.MinProperties != 0 {
+		fields = append(fields, "MinProperties")
+	}
+	if schema.Required != nil {
+		fields = append(fields, "Required")
+	}
+	if schema.AllOf != nil {
+		fields = append(fields, "AllOf")
+	}
+	if schema.OneOf != nil {
+		fields = append(fields, "OneOf")
+	}
+
+	if schema.AnyOf != nil {
+		fields = append(fields, "AnyOf")
+	}
+	if schema.Not != nil {
+		fields = append(fields, "Not")
+	}
+	if schema.Default != nil {
+		fields = append(fields, "Default")
+	}
+	return fields
 }
 
 func (c *FeatureChecker) analyzeResponse(pair *openapiv3.NamedResponseOrReference) {
