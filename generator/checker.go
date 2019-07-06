@@ -23,17 +23,16 @@ func (c *FeatureChecker) Run() []*plugins.Message {
 }
 
 func (c *FeatureChecker) analyzeOpenAPIdocument() {
-
-	if c.document.Servers != nil || c.document.Security != nil || c.document.Tags != nil || c.document.ExternalDocs != nil {
+	fields := getNotSupportedOpenAPIdocumentFields(c.document)
+	if len(fields) > 0 {
 		msg := &plugins.Message{
 			Code:  "DOCUMENTFIELDS",
 			Level: plugins.Message_WARNING,
-			Text:  "Fields: Servers, Security, Tags, and ExternalDocs are not supported for Document with title: " + c.document.Info.Title,
+			Text:  "Fields: " + strings.Join(fields, ",") + " are not supported for Document with title: " + c.document.Info.Title,
 			Keys:  []string{"Document"},
 		}
 		c.messages = append(c.messages, msg)
 	}
-
 	c.analyzeComponents()
 	c.analyzePaths()
 }
@@ -41,12 +40,12 @@ func (c *FeatureChecker) analyzeOpenAPIdocument() {
 func (c *FeatureChecker) analyzeComponents() {
 	components := c.document.Components
 
-	if components.Examples != nil || components.Headers != nil || components.SecuritySchemes != nil ||
-		components.Links != nil || components.Callbacks != nil {
+	fields := getNotSupportedComponentsFields(components)
+	if len(fields) > 0 {
 		msg := &plugins.Message{
 			Code:  "COMPONENTSFIELDS",
 			Level: plugins.Message_WARNING,
-			Text:  "Fields: Examples, Headers, Links, and Callbacks are not supported for the component",
+			Text:  "Fields: " + strings.Join(fields, ",") + "are not supported for the component",
 			Keys:  []string{"Component"},
 		}
 		c.messages = append(c.messages, msg)
@@ -86,12 +85,12 @@ func (c *FeatureChecker) analyzePaths() {
 func (c *FeatureChecker) analyzePathItem(pair *openapiv3.NamedPathItem) {
 	pathItem := pair.Value
 
-	if pathItem.Head != nil || pathItem.Options != nil || pathItem.Trace != nil || pathItem.Servers != nil ||
-		pathItem.Parameters != nil {
+	fields := getNotSupportedPathItemFields(pathItem)
+	if len(fields) > 0 {
 		msg := &plugins.Message{
 			Code:  "PATHFIELDS",
 			Level: plugins.Message_WARNING,
-			Text:  "Fields: Head, Options, Trace, Servers, and Parameters are not supported for path: " + pair.Name,
+			Text:  "Fields: " + strings.Join(fields, ",") + " are not supported for path: " + pair.Name,
 			Keys:  []string{"Paths", pair.Name, "Operation"},
 		}
 		c.messages = append(c.messages, msg)
@@ -104,15 +103,13 @@ func (c *FeatureChecker) analyzePathItem(pair *openapiv3.NamedPathItem) {
 }
 
 func (c *FeatureChecker) analyzeOperation(operation *openapiv3.Operation) {
-
-	if operation.Tags != nil || operation.ExternalDocs != nil || operation.Callbacks != nil || operation.Deprecated ||
-		operation.Security != nil || operation.Servers != nil {
+	fields := getNotSupportedOperationFields(operation)
+	if len(fields) > 0 {
 		msg := &plugins.Message{
 			Code:  "OPERATIONFIELDS",
 			Level: plugins.Message_WARNING,
-			Text: "Fields: Tags, ExternalDocs, Callbacks, Deprecated, Security, and Servers " +
-				"are not supported for operation: " + operation.OperationId,
-			Keys: []string{"Operation", operation.OperationId, "Callbacks"},
+			Text:  "Fields:  " + strings.Join(fields, ",") + "are not supported for operation: " + operation.OperationId,
+			Keys:  []string{"Operation", operation.OperationId, "Callbacks"},
 		}
 		c.messages = append(c.messages, msg)
 	}
@@ -124,15 +121,13 @@ func (c *FeatureChecker) analyzeOperation(operation *openapiv3.Operation) {
 
 func (c *FeatureChecker) analyzeParameter(paramOrRef *openapiv3.ParameterOrReference) {
 	if parameter := paramOrRef.GetParameter(); parameter != nil {
-		if parameter.Required || parameter.Deprecated || parameter.AllowEmptyValue || parameter.Style != "" ||
-			parameter.Explode || parameter.AllowReserved || parameter.Example != nil || parameter.Examples != nil ||
-			parameter.Content != nil {
+		fields := getNotSupportedParameterFields(parameter)
+		if len(fields) > 0 {
 			msg := &plugins.Message{
 				Code:  "PARAMETERFIELDS",
 				Level: plugins.Message_WARNING,
-				Text: "Fields: Required, Deprecated, AllowEmptyValue, Style, Explode, AllowReserved, Example, Examples" +
-					" and Content are not supported for parameter: " + parameter.Name,
-				Keys: []string{"Parameter", parameter.Name},
+				Text:  "Fields: " + strings.Join(fields, ",") + " are not supported for parameter: " + parameter.Name,
+				Keys:  []string{"Parameter", parameter.Name},
 			}
 			c.messages = append(c.messages, msg)
 		}
@@ -163,6 +158,12 @@ func (c *FeatureChecker) analyzeSchema(identifier string, schemaOrReference *ope
 			c.messages = append(c.messages, msg)
 		}
 
+		if items := schema.Items; items != nil {
+			for _, schemaOrRef := range items.SchemaOrReference {
+				c.analyzeSchema("Items of "+identifier, schemaOrRef)
+			}
+		}
+
 		if properties := schema.Properties; properties != nil {
 			for _, pair := range properties.AdditionalProperties {
 				c.analyzeSchema(pair.Name, pair.Value)
@@ -170,9 +171,136 @@ func (c *FeatureChecker) analyzeSchema(identifier string, schemaOrReference *ope
 		}
 
 		if additionalProperties := schema.AdditionalProperties; additionalProperties != nil {
-			c.analyzeSchema("AdditionalPropertiesSchema", additionalProperties.GetSchemaOrReference())
+			c.analyzeSchema("AdditionalProperties of "+identifier, additionalProperties.GetSchemaOrReference())
 		}
 	}
+}
+
+func (c *FeatureChecker) analyzeResponse(pair *openapiv3.NamedResponseOrReference) {
+	if response := pair.Value.GetResponse(); response != nil {
+		fields := getNotSupportedResponseFields(response)
+		if len(fields) > 0 {
+			msg := &plugins.Message{
+				Code:  "RESPONSEFIELDS",
+				Level: plugins.Message_WARNING,
+				Text:  "Fields:" + strings.Join(fields, ",") + "are not supported for response: " + pair.Name,
+				Keys:  []string{"Response", pair.Name},
+			}
+			c.messages = append(c.messages, msg)
+		}
+
+		for _, pair := range response.Content.AdditionalProperties {
+			c.analyzeContent(pair)
+		}
+	}
+}
+
+func (c *FeatureChecker) analyzeRequestBody(pair *openapiv3.NamedRequestBodyOrReference) {
+	if requestBody := pair.Value.GetRequestBody(); requestBody != nil {
+		if requestBody.Required {
+			msg := &plugins.Message{
+				Code:  "REQUESTBODYFIELDS",
+				Level: plugins.Message_WARNING,
+				Text:  "Fields: Required are not supported for the request: " + pair.Name,
+				Keys:  []string{"RequestBody", pair.Name},
+			}
+			c.messages = append(c.messages, msg)
+		}
+		for _, pair := range requestBody.Content.AdditionalProperties {
+			c.analyzeContent(pair)
+		}
+	}
+}
+
+func (c *FeatureChecker) analyzeContent(pair *openapiv3.NamedMediaType) {
+	mediaType := pair.Value
+
+	fields := getNotSupportedMediaTypeFields(mediaType)
+	if len(fields) > 0 {
+		msg := &plugins.Message{
+			Code:  "MEDIATYPEFIELDS",
+			Level: plugins.Message_WARNING,
+			Text:  "Fields:" + strings.Join(fields, ",") + " are not supported for the mediatype: " + pair.Name,
+			Keys:  []string{"MediaType", pair.Name},
+		}
+		c.messages = append(c.messages, msg)
+	}
+
+	if mediaType.Schema != nil {
+		c.analyzeSchema(pair.Name, mediaType.Schema)
+	}
+}
+
+func getValidOperations(pathItem *openapiv3.PathItem) []*openapiv3.Operation {
+	operations := make([]*openapiv3.Operation, 0)
+
+	if pathItem.Get != nil {
+		operations = append(operations, pathItem.Get)
+	}
+	if pathItem.Put != nil {
+		operations = append(operations, pathItem.Put)
+	}
+	if pathItem.Post != nil {
+		operations = append(operations, pathItem.Post)
+	}
+	if pathItem.Delete != nil {
+		operations = append(operations, pathItem.Delete)
+	}
+	if pathItem.Patch != nil {
+		operations = append(operations, pathItem.Patch)
+	}
+	return operations
+}
+
+func getNotSupportedOpenAPIdocumentFields(document *openapiv3.Document) []string {
+	fields := make([]string, 0)
+
+	if document.Servers != nil {
+		fields = append(fields, "Servers")
+	}
+	if document.Security != nil {
+		fields = append(fields, "Security")
+	}
+	if document.Tags != nil {
+		fields = append(fields, "Tags")
+	}
+	if document.ExternalDocs != nil {
+		fields = append(fields, "ExternalDocs")
+	}
+	return fields
+}
+
+func getNotSupportedParameterFields(parameter *openapiv3.Parameter) []string {
+	fields := make([]string, 0)
+	if parameter.Required {
+		fields = append(fields, "Required")
+	}
+	if parameter.Deprecated {
+		fields = append(fields, "Deprecated")
+	}
+	if parameter.AllowEmptyValue {
+		fields = append(fields, "AllowEmptyValue")
+	}
+	if parameter.Style != "" {
+		fields = append(fields, "Style")
+	}
+	if parameter.Explode {
+		fields = append(fields, "Explode")
+	}
+	if parameter.AllowReserved {
+		fields = append(fields, "AllowReserved")
+	}
+	if parameter.Example != nil {
+		fields = append(fields, "Example")
+	}
+	if parameter.Examples != nil {
+		fields = append(fields, "Examples")
+	}
+	if parameter.Content != nil {
+		fields = append(fields, "Content")
+	}
+
+	return fields
 }
 
 func getNotSupportedSchemaFields(schema *openapiv3.Schema) []string {
@@ -265,73 +393,90 @@ func getNotSupportedSchemaFields(schema *openapiv3.Schema) []string {
 	return fields
 }
 
-func (c *FeatureChecker) analyzeResponse(pair *openapiv3.NamedResponseOrReference) {
-	if response := pair.Value.GetResponse(); response != nil {
-		if response.Links != nil || response.Headers != nil {
-			msg := &plugins.Message{
-				Code:  "RESPONSEFIELDS",
-				Level: plugins.Message_WARNING,
-				Text:  "Fields: Links, and Headers are not supported for response: " + pair.Name,
-				Keys:  []string{"Response", pair.Name},
-			}
-			c.messages = append(c.messages, msg)
-		}
-
-		for _, pair := range response.Content.AdditionalProperties {
-			c.analyzeContent(pair)
-		}
+func getNotSupportedMediaTypeFields(mediaType *openapiv3.MediaType) []string {
+	fields := make([]string, 0)
+	if mediaType.Examples != nil {
+		fields = append(fields, "Examples")
 	}
+	if mediaType.Example != nil {
+		fields = append(fields, "Example")
+	}
+	if mediaType.Encoding != nil {
+		fields = append(fields, "Encoding")
+	}
+	return fields
 }
 
-func (c *FeatureChecker) analyzeRequestBody(pair *openapiv3.NamedRequestBodyOrReference) {
-	if requestBody := pair.Value.GetRequestBody(); requestBody != nil {
-		if requestBody.Required {
-			msg := &plugins.Message{
-				Code:  "REQUESTBODYFIELDS",
-				Level: plugins.Message_WARNING,
-				Text:  "Fields: Required are not supported for the request: " + pair.Name,
-				Keys:  []string{"RequestBody", pair.Name},
-			}
-			c.messages = append(c.messages, msg)
-		}
-		for _, pair := range requestBody.Content.AdditionalProperties {
-			c.analyzeContent(pair)
-		}
+func getNotSupportedOperationFields(operation *openapiv3.Operation) []string {
+	fields := make([]string, 0)
+	if operation.Tags != nil {
+		fields = append(fields, "Tags")
 	}
+	if operation.ExternalDocs != nil {
+		fields = append(fields, "ExternalDocs")
+	}
+	if operation.Callbacks != nil {
+		fields = append(fields, "Callbacks")
+	}
+	if operation.Deprecated {
+		fields = append(fields, "Deprecated")
+	}
+	if operation.Security != nil {
+		fields = append(fields, "Security")
+	}
+	if operation.Servers != nil {
+		fields = append(fields, "Servers")
+	}
+	return fields
 }
 
-func (c *FeatureChecker) analyzeContent(pair *openapiv3.NamedMediaType) {
-	mediaType := pair.Value
-
-	if mediaType.Examples != nil || mediaType.Example != nil || mediaType.Encoding != nil {
-		msg := &plugins.Message{
-			Code:  "MEDIATYPEFIELDS",
-			Level: plugins.Message_WARNING,
-			Text:  "Fields: Examples, Example, and Encoding are not supported for the mediatype: " + pair.Name,
-			Keys:  []string{"MediaType", pair.Name},
-		}
-		c.messages = append(c.messages, msg)
-		c.analyzeSchema(pair.Name, mediaType.Schema)
+func getNotSupportedResponseFields(response *openapiv3.Response) []string {
+	fields := make([]string, 0)
+	if response.Links != nil {
+		fields = append(fields, "Links")
 	}
+	if response.Headers != nil {
+		fields = append(fields, "Headers")
+	}
+	return fields
 }
 
-func getValidOperations(pathItem *openapiv3.PathItem) []*openapiv3.Operation {
-	operations := make([]*openapiv3.Operation, 0)
+func getNotSupportedPathItemFields(pathItem *openapiv3.PathItem) []string {
+	fields := make([]string, 0)
+	if pathItem.Head != nil {
+		fields = append(fields, "Head")
+	}
+	if pathItem.Options != nil {
+		fields = append(fields, "Options")
+	}
+	if pathItem.Trace != nil {
+		fields = append(fields, "Trace")
+	}
+	if pathItem.Servers != nil {
+		fields = append(fields, "Servers")
+	}
+	if pathItem.Parameters != nil {
+		fields = append(fields, "Parameters")
+	}
+	return fields
+}
 
-	if pathItem.Get != nil {
-		operations = append(operations, pathItem.Get)
+func getNotSupportedComponentsFields(components *openapiv3.Components) []string {
+	fields := make([]string, 0)
+	if components.Examples != nil {
+		fields = append(fields, "Examples")
 	}
-	if pathItem.Put != nil {
-		operations = append(operations, pathItem.Put)
+	if components.Headers != nil {
+		fields = append(fields, "Headers")
 	}
-	if pathItem.Post != nil {
-		operations = append(operations, pathItem.Post)
+	if components.SecuritySchemes != nil {
+		fields = append(fields, "SecuritySchemes")
 	}
-	if pathItem.Delete != nil {
-		operations = append(operations, pathItem.Delete)
+	if components.Links != nil {
+		fields = append(fields, "Links")
 	}
-	if pathItem.Patch != nil {
-		operations = append(operations, pathItem.Patch)
+	if components.Callbacks != nil {
+		fields = append(fields, "Callbacks")
 	}
-	return operations
+	return fields
 }
