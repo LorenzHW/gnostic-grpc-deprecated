@@ -34,10 +34,10 @@ type Renderer struct {
 }
 
 // NewRenderer creates a renderer.
-func NewRenderer(model *surface.Model) (renderer *Renderer, err error) {
+func NewRenderer(model *surface.Model) (renderer *Renderer) {
 	renderer = &Renderer{}
 	renderer.Model = model
-	return renderer, nil
+	return renderer
 }
 
 // Generate runs the renderer to generate the named files.

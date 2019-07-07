@@ -53,9 +53,8 @@ func RunProtoGenerator() {
 			err = proto.Unmarshal(model.Value, surfaceModel)
 			if err == nil {
 				// Create the renderer.
-				renderer, err := NewRenderer(surfaceModel)
+				renderer := NewRenderer(surfaceModel)
 				renderer.Package = packageName
-				env.RespondAndExitIfError(err)
 
 				// Run the renderer to generate files and add them to the response object.
 				err = renderer.Render(env.Response, packageName+".proto")
