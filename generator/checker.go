@@ -23,7 +23,7 @@ func (c *FeatureChecker) Run() []*plugins.Message {
 }
 
 func (c *FeatureChecker) analyzeOpenAPIdocument() {
-	fields := getNotSupportedOpenAPIdocumentFields(c.document)
+	fields := getNotSupportedOpenAPIDocumentFields(c.document)
 	if len(fields) > 0 {
 		text := "Fields: " + strings.Join(fields, ", ") + " are not supported for Document with title: " + c.document.Info.Title
 		msg := constructMessage("DOCUMENTFIELDS", text, []string{"Document"})
@@ -221,7 +221,7 @@ func getValidOperations(pathItem *openapiv3.PathItem) []*openapiv3.Operation {
 	return operations
 }
 
-func getNotSupportedOpenAPIdocumentFields(document *openapiv3.Document) []string {
+func getNotSupportedOpenAPIDocumentFields(document *openapiv3.Document) []string {
 	fields := make([]string, 0)
 
 	if document.Servers != nil {
