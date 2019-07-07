@@ -8,4 +8,5 @@ sudo: false
 language: go
 
 script:
+  - go get github.com/googleapis/gnostic
   - go test -v ./...
