@@ -25,12 +25,8 @@ func (c *FeatureChecker) Run() []*plugins.Message {
 func (c *FeatureChecker) analyzeOpenAPIdocument() {
 	fields := getNotSupportedOpenAPIdocumentFields(c.document)
 	if len(fields) > 0 {
-		msg := &plugins.Message{
-			Code:  "DOCUMENTFIELDS",
-			Level: plugins.Message_WARNING,
-			Text:  "Fields: " + strings.Join(fields, ", ") + " are not supported for Document with title: " + c.document.Info.Title,
-			Keys:  []string{"Document"},
-		}
+		text := "Fields: " + strings.Join(fields, ", ") + " are not supported for Document with title: " + c.document.Info.Title
+		msg := constructMessage("DOCUMENTFIELDS", text, []string{"Document"})
 		c.messages = append(c.messages, msg)
 	}
 	c.analyzeComponents()
@@ -42,12 +38,8 @@ func (c *FeatureChecker) analyzeComponents() {
 
 	fields := getNotSupportedComponentsFields(components)
 	if len(fields) > 0 {
-		msg := &plugins.Message{
-			Code:  "COMPONENTSFIELDS",
-			Level: plugins.Message_WARNING,
-			Text:  "Fields: " + strings.Join(fields, ", ") + " are not supported for the component",
-			Keys:  []string{"Component"},
-		}
+		text := "Fields: " + strings.Join(fields, ", ") + " are not supported for the component"
+		msg := constructMessage("COMPONENTSFIELDS", text, []string{"Component"})
 		c.messages = append(c.messages, msg)
 	}
 
@@ -87,12 +79,8 @@ func (c *FeatureChecker) analyzePathItem(pair *openapiv3.NamedPathItem) {
 
 	fields := getNotSupportedPathItemFields(pathItem)
 	if len(fields) > 0 {
-		msg := &plugins.Message{
-			Code:  "PATHFIELDS",
-			Level: plugins.Message_WARNING,
-			Text:  "Fields: " + strings.Join(fields, ", ") + " are not supported for path: " + pair.Name,
-			Keys:  []string{"Paths", pair.Name, "Operation"},
-		}
+		text := "Fields: " + strings.Join(fields, ", ") + " are not supported for path: " + pair.Name
+		msg := constructMessage("PATHFIELDS", text, []string{"Paths", pair.Name, "Operation"})
 		c.messages = append(c.messages, msg)
 	}
 
@@ -105,12 +93,8 @@ func (c *FeatureChecker) analyzePathItem(pair *openapiv3.NamedPathItem) {
 func (c *FeatureChecker) analyzeOperation(operation *openapiv3.Operation) {
 	fields := getNotSupportedOperationFields(operation)
 	if len(fields) > 0 {
-		msg := &plugins.Message{
-			Code:  "OPERATIONFIELDS",
-			Level: plugins.Message_WARNING,
-			Text:  "Fields:  " + strings.Join(fields, ", ") + "are not supported for operation: " + operation.OperationId,
-			Keys:  []string{"Operation", operation.OperationId, "Callbacks"},
-		}
+		text := "Fields:  " + strings.Join(fields, ", ") + " are not supported for operation: " + operation.OperationId
+		msg := constructMessage("OPERATIONFIELDS", text, []string{"Operation", operation.OperationId, "Callbacks"})
 		c.messages = append(c.messages, msg)
 	}
 
@@ -123,12 +107,8 @@ func (c *FeatureChecker) analyzeParameter(paramOrRef *openapiv3.ParameterOrRefer
 	if parameter := paramOrRef.GetParameter(); parameter != nil {
 		fields := getNotSupportedParameterFields(parameter)
 		if len(fields) > 0 {
-			msg := &plugins.Message{
-				Code:  "PARAMETERFIELDS",
-				Level: plugins.Message_WARNING,
-				Text:  "Fields: " + strings.Join(fields, ", ") + " are not supported for parameter: " + parameter.Name,
-				Keys:  []string{"Parameter", parameter.Name},
-			}
+			text := "Fields: " + strings.Join(fields, ", ") + " are not supported for parameter: " + parameter.Name
+			msg := constructMessage("PARAMATERFIELDS", text, []string{"Parameter", parameter.Name})
 			c.messages = append(c.messages, msg)
 		}
 		c.analyzeSchema(parameter.Name, parameter.Schema)
@@ -139,22 +119,14 @@ func (c *FeatureChecker) analyzeSchema(identifier string, schemaOrReference *ope
 	if schema := schemaOrReference.GetSchema(); schema != nil {
 		fields := getNotSupportedSchemaFields(schema)
 		if len(fields) > 0 {
-			msg := &plugins.Message{
-				Code:  "SCHEMAFIELDS",
-				Level: plugins.Message_WARNING,
-				Text:  "Fields: " + strings.Join(fields, ", ") + " are not supported for the schema: " + identifier,
-				Keys:  []string{identifier, "Schema"},
-			}
+			text := "Fields: " + strings.Join(fields, ", ") + " are not supported for the schema: " + identifier
+			msg := constructMessage("SCHEMAFIELDS", text, []string{identifier, "Schema"})
 			c.messages = append(c.messages, msg)
 		}
 
 		if enum := schema.Enum; enum != nil {
-			msg := &plugins.Message{
-				Code:  "SCHEMAFIELDS",
-				Level: plugins.Message_WARNING,
-				Text:  "Field: Enum is not generated as enum in .proto for schema: " + identifier,
-				Keys:  []string{identifier, "Schema"},
-			}
+			text := "Field: Enum is not generated as enum in .proto for schema: " + identifier
+			msg := constructMessage("SCHEMAFIELDS", text, []string{identifier, "Schema"})
 			c.messages = append(c.messages, msg)
 		}
 
@@ -180,12 +152,8 @@ func (c *FeatureChecker) analyzeResponse(pair *openapiv3.NamedResponseOrReferenc
 	if response := pair.Value.GetResponse(); response != nil {
 		fields := getNotSupportedResponseFields(response)
 		if len(fields) > 0 {
-			msg := &plugins.Message{
-				Code:  "RESPONSEFIELDS",
-				Level: plugins.Message_WARNING,
-				Text:  "Fields:" + strings.Join(fields, ", ") + "are not supported for response: " + pair.Name,
-				Keys:  []string{"Response", pair.Name},
-			}
+			text := "Fields:" + strings.Join(fields, ", ") + " are not supported for response: " + pair.Name
+			msg := constructMessage("RESPONSEFIELDS", text, []string{"Response", pair.Name})
 			c.messages = append(c.messages, msg)
 		}
 
@@ -198,12 +166,8 @@ func (c *FeatureChecker) analyzeResponse(pair *openapiv3.NamedResponseOrReferenc
 func (c *FeatureChecker) analyzeRequestBody(pair *openapiv3.NamedRequestBodyOrReference) {
 	if requestBody := pair.Value.GetRequestBody(); requestBody != nil {
 		if requestBody.Required {
-			msg := &plugins.Message{
-				Code:  "REQUESTBODYFIELDS",
-				Level: plugins.Message_WARNING,
-				Text:  "Fields: Required are not supported for the request: " + pair.Name,
-				Keys:  []string{"RequestBody", pair.Name},
-			}
+			text := "Fields: Required are not supported for the request: " + pair.Name
+			msg := constructMessage("REQUESTBODYFIELDS", text, []string{"RequestBody", pair.Name})
 			c.messages = append(c.messages, msg)
 		}
 		for _, pair := range requestBody.Content.AdditionalProperties {
@@ -217,17 +181,22 @@ func (c *FeatureChecker) analyzeContent(pair *openapiv3.NamedMediaType) {
 
 	fields := getNotSupportedMediaTypeFields(mediaType)
 	if len(fields) > 0 {
-		msg := &plugins.Message{
-			Code:  "MEDIATYPEFIELDS",
-			Level: plugins.Message_WARNING,
-			Text:  "Fields:" + strings.Join(fields, ", ") + " are not supported for the mediatype: " + pair.Name,
-			Keys:  []string{"MediaType", pair.Name},
-		}
+		text := "Fields:" + strings.Join(fields, ", ") + " are not supported for the mediatype: " + pair.Name
+		msg := constructMessage("MEDIATYPEFIELDS", text, []string{"MediaType", pair.Name})
 		c.messages = append(c.messages, msg)
 	}
 
 	if mediaType.Schema != nil {
 		c.analyzeSchema(pair.Name, mediaType.Schema)
+	}
+}
+
+func constructMessage(code string, text string, keys []string) *plugins.Message {
+	return &plugins.Message{
+		Code:  code,
+		Level: plugins.Message_WARNING,
+		Text:  text,
+		Keys:  keys,
 	}
 }
 
