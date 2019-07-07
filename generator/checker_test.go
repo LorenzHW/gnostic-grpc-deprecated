@@ -1,16 +1,15 @@
 package generator
 
 import (
-	"github.com/golang/protobuf/proto"
 	openapiv3 "github.com/googleapis/gnostic/OpenAPIv3"
 	plugins "github.com/googleapis/gnostic/plugins"
-	"io/ioutil"
+	"os/exec"
 	"testing"
 )
 
 func TestNewFeatureCheckerParameters(t *testing.T) {
-	input := "testfiles/parameters/test.pb"
-	documentv3 := ReadOpenAPIBinary(input)
+	input := "testfiles/parameters.yaml"
+	documentv3 := readOpenAPIBinary(input)
 
 	checker := NewFeatureChecker(documentv3)
 	messages := checker.Run()
@@ -25,8 +24,8 @@ func TestNewFeatureCheckerParameters(t *testing.T) {
 }
 
 func TestFeatureCheckerRequestBodies(t *testing.T) {
-	input := "testfiles/requestBodies/test.pb"
-	documentv3 := ReadOpenAPIBinary(input)
+	input := "testfiles/requestBodies.yaml"
+	documentv3 := readOpenAPIBinary(input)
 
 	checker := NewFeatureChecker(documentv3)
 	messages := checker.Run()
@@ -40,8 +39,8 @@ func TestFeatureCheckerRequestBodies(t *testing.T) {
 }
 
 func TestFeatureCheckerResponses(t *testing.T) {
-	input := "testfiles/responses/test.pb"
-	documentv3 := ReadOpenAPIBinary(input)
+	input := "testfiles/responses.yaml"
+	documentv3 := readOpenAPIBinary(input)
 
 	checker := NewFeatureChecker(documentv3)
 	messages := checker.Run()
@@ -65,9 +64,9 @@ func validateMessages(t *testing.T, expectedMessageTexts []string, messages []*p
 	}
 }
 
-func ReadOpenAPIBinary(input string) *openapiv3.Document {
-	apiData, _ := ioutil.ReadFile(input)
-	documentv3 := &openapiv3.Document{}
-	proto.Unmarshal(apiData, documentv3)
+func readOpenAPIBinary(input string) *openapiv3.Document {
+	cmd := exec.Command("gnostic", "--pb-out=-", input)
+	b, _ := cmd.Output()
+	documentv3, _ := createOpenAPIdocFromGnosticOutput(b)
 	return documentv3
 }

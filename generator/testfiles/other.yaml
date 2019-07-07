@@ -1,0 +1,21 @@
+openapi: 3.0.0
+info:
+  title: Test API for GSoC project
+  version: "1.0.0"
+  description: |
+    This is a OpenAPI description for testing my GSoC project. The name of the path defines what
+    will be tested and the operation object will be set accordingly.
+    Structure of tests:
+    /testParameter*   --> To test everything related to path/query parameteres
+    /testResponse*    --> To test everything related to respones
+    /testRequestBody* --> To test everything related to request bodies
+    others            --> Other stuff
+paths:
+  /testExternalReference:
+    get:
+      operationId: testExternalReference
+      parameters:
+        - $ref: https://raw.githubusercontent.com/LorenzHW/gnostic-protoc-generator/master/generator/testfiles/parameters/test.yaml#/components/parameters/Parameter2
+      responses:
+        200:
+          description: success

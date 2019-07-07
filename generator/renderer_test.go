@@ -1,9 +1,12 @@
 package generator
 
 import (
+	"github.com/golang/protobuf/proto"
+	openapiv3 "github.com/googleapis/gnostic/OpenAPIv3"
 	surface "github.com/googleapis/gnostic/surface"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"testing"
@@ -19,7 +22,7 @@ const (
 )
 
 func TestFileDescriptorGeneratorParameters(t *testing.T) {
-	input := "testfiles/parameters/test.pb"
+	input := "testfiles/parameters.yaml"
 
 	protoData, err := runGeneratorWithoutEnvironment(input)
 	if err != nil {
@@ -29,7 +32,7 @@ func TestFileDescriptorGeneratorParameters(t *testing.T) {
 
 	checkContents(t, string(protoData), "goldstandard/parameter.proto")
 
-	erroneousInput := []string{"testfiles/parameters/errors/invalid_path_param.pb", "testfiles/parameters/errors/invalid_query_param.pb"}
+	erroneousInput := []string{"testfiles/errors/invalid_path_param.yaml", "testfiles/errors/invalid_query_param.yaml"}
 
 	for _, errorInput := range erroneousInput {
 		errorMessages := map[string]bool{
@@ -47,7 +50,7 @@ func TestFileDescriptorGeneratorParameters(t *testing.T) {
 }
 
 func TestFileDescriptorGeneratorRequestBodies(t *testing.T) {
-	input := "testfiles/requestBodies/test.pb"
+	input := "testfiles/requestBodies.yaml"
 
 	protoData, err := runGeneratorWithoutEnvironment(input)
 	if err != nil {
@@ -60,7 +63,7 @@ func TestFileDescriptorGeneratorRequestBodies(t *testing.T) {
 }
 
 func TestFileDescriptorGeneratorResponses(t *testing.T) {
-	input := "testfiles/responses/test.pb"
+	input := "testfiles/responses.yaml"
 
 	protoData, err := runGeneratorWithoutEnvironment(input)
 	if err != nil {
@@ -72,7 +75,7 @@ func TestFileDescriptorGeneratorResponses(t *testing.T) {
 
 func runGeneratorWithoutEnvironment(input string) ([]byte, error) {
 	surfaceModel := buildSurfaceModel(input)
-	r, _ := NewRenderer(surfaceModel)
+	r := NewRenderer(surfaceModel)
 	r.Package = "testPackage"
 
 	fdSet, err := r.RunFileDescriptorSetGenerator()
@@ -81,11 +84,16 @@ func runGeneratorWithoutEnvironment(input string) ([]byte, error) {
 		return nil, err
 	}
 	f, err := r.RenderProto("")
+	if err != nil {
+		return nil, err
+	}
 	return f.Data, err
 }
 
 func buildSurfaceModel(input string) *surface.Model {
-	documentv3 := ReadOpenAPIBinary(input)
+	cmd := exec.Command("gnostic", "--pb-out=-", input)
+	b, _ := cmd.Output()
+	documentv3, _ := createOpenAPIdocFromGnosticOutput(b)
 	surfaceModel, _ := surface.NewModelFromOpenAPI3(documentv3)
 	return surfaceModel
 }
@@ -115,4 +123,16 @@ func checkContents(t *testing.T, actualContents string, goldenFileName string) {
 	if goldstandard != actualContents {
 		t.Errorf("File contents does not match.")
 	}
+}
+
+func createOpenAPIdocFromGnosticOutput(binaryInput []byte) (*openapiv3.Document, error) {
+	document := &openapiv3.Document{}
+	err := proto.Unmarshal(binaryInput, document)
+	if err != nil {
+		// If we execute gnostic with argument: '-pb-out=-' we get an EOF
+		if err.Error() != "unexpected EOF" {
+			return nil, err
+		}
+	}
+	return document, nil
 }

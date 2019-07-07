@@ -33,40 +33,6 @@ paths:
         200:
           description: success
 
-#    ########################## OTHER ##########################
-#  /testAllPossibleOperations: # TODO: What about options/head/trace?
-#    get:
-#      operationId: testAllPossibleOperationsGET
-#      responses:
-#        200:
-#          description: success
-#    delete:
-#      operationId: testAllPossibleOperationsDELETE
-#      responses:
-#        200:
-#          description: success
-#    post:
-#      operationId: testAllPossibleOperationsPOST
-#      responses:
-#        200:
-#          description: success
-#    patch:
-#      operationId: testAllPossibleOperationsPATCH
-#      responses:
-#        200:
-#          description: success
-#    put:
-#      operationId: testAllPossibleOperationsPUT
-#      responses:
-#        200:
-#          description: success
-#  /testEmptyParameterEmptyResponse:
-#    get:
-#      operationId: testEmptyParameterEmptyResponse
-#      responses:
-#        200:
-#          description: success
-#    ########################## END ##########################
 components:
   schemas:
     Person:
