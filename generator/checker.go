@@ -113,6 +113,11 @@ func (c *GrpcChecker) analyzeOperation(operation *openapiv3.Operation) {
 		c.analyzeResponse(response)
 	}
 
+	if defaultResponse := operation.Responses.Default; defaultResponse != nil {
+		wrap := &openapiv3.NamedResponseOrReference{Name: operation.OperationId + " Default response", Value: defaultResponse}
+		c.analyzeResponse(wrap)
+	}
+
 	wrap := &openapiv3.NamedRequestBodyOrReference{Name: operation.OperationId, Value: operation.RequestBody}
 	c.analyzeRequestBody(wrap)
 
