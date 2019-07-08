@@ -19,15 +19,14 @@ import (
 	"github.com/golang/protobuf/descriptor"
 	"github.com/golang/protobuf/proto"
 	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
 	surface_v1 "github.com/googleapis/gnostic/surface"
-
 	"google.golang.org/genproto/googleapis/api/annotations"
-	"log"
 	"strings"
 )
 
-var protoBufTypes = getProtobufTypes()
+var protoBufScalarTypes = getProtobufTypes()
 var openAPITypesToProtoBuf = getOpenAPITypesToProtoBufTypes()
 var openAPIScalarTypes = getOpenAPIScalarTypes()
 
@@ -64,17 +63,12 @@ func (renderer *Renderer) RunFileDescriptorSetGenerator() (fdSet *dpb.FileDescri
 	return fdSet, err
 }
 
-// Protoreflect needs all the dependencies that are used inside of the initial FileDescriptorProto
+// Protoreflect needs all the dependencies that are used inside of the FileDescriptorProto (that gets rendered)
 // to work properly. Those dependencies are google/protobuf/empty.proto, google/api/annotations.proto,
-// and "google/protobuf/descriptor.proto". For all those dependencies the corresponding
+// "google/protobuf/descriptor.proto" and "google/protobuf/any". For all those dependencies the corresponding
 // FileDescriptorProto has to be added to the FileDescriptorSet. Protoreflect won't work
 // if a reference is missing.
 func buildDependencies(fdSet *dpb.FileDescriptorSet) {
-	// Dependency to "google/protobuf/empty.proto" for RPC methods without any request / response
-	// parameters.
-	e := empty.Empty{}
-	fd, _ := descriptor.ForMessage(&e)
-
 	// Dependency to google/api/annotations.proto for gRPC-HTTP transcoding. Here a couple of problems arise:
 	// 1. Problem: 	We cannot call descriptor.ForMessage(&annotations.E_Http), which would be our
 	//				required dependency. However, we can call descriptor.ForMessage(&http) and
@@ -82,7 +76,7 @@ func buildDependencies(fdSet *dpb.FileDescriptorSet) {
 	// 2. Problem: 	The name is set wrong.
 	// 3. Problem: 	google/api/annotations.proto has a dependency to google/protobuf/descriptor.proto.
 	http := annotations.Http{}
-	fd2, _ := descriptor.ForMessage(&http)
+	fd, _ := descriptor.ForMessage(&http)
 
 	extensionName := "http"
 	n := "google/api/annotations.proto"
@@ -100,26 +94,26 @@ func buildDependencies(fdSet *dpb.FileDescriptorSet) {
 		Extendee: &extendee,
 	}
 
-	fd2.Extension = append(fd2.Extension, httpExtension)                        // 1. Problem
-	fd2.Name = &n                                                               // 2. Problem
-	fd2.Dependency = append(fd2.Dependency, "google/protobuf/descriptor.proto") //3.rd Problem
+	fd.Extension = append(fd.Extension, httpExtension)                        // 1. Problem
+	fd.Name = &n                                                              // 2. Problem
+	fd.Dependency = append(fd.Dependency, "google/protobuf/descriptor.proto") //3.rd Problem
 
-	// Dependency to google/protobuf/descriptor.proto to address 3.rd Problem. FileDescriptorProto
-	// still needs to be added otherwise protoreflect won't work.
+	// Build other required dependencies
+	e := empty.Empty{}
 	fdp := dpb.FieldDescriptorProto{}
+	a := any.Any{}
+	fd2, _ := descriptor.ForMessage(&e)
 	fd3, _ := descriptor.ForMessage(&fdp)
+	fd4, _ := descriptor.ForMessage(&a)
 
-	// At last, we need to add the dependencies to the FileDescriptorProto that will get rendered.
-	dependencies := []string{"google/api/annotations.proto", "google/protobuf/empty.proto"}
-	fdProto := fdSet.File[0]
-	for _, dep := range dependencies {
-		fdProto.Dependency = append(fdProto.Dependency, dep)
-	}
+	// At last, we need to add the dependencies to the FileDescriptorProto in order to get them rendered.
+	dependencies := []string{"google/api/annotations.proto", "google/protobuf/empty.proto", "google/protobuf/any.proto"}
+	lastFdProto := fdSet.File[len(fdSet.File)-1]
+	lastFdProto.Dependency = append(lastFdProto.Dependency, dependencies...)
 
-	// According to the documentation of prDesc.CreateFileDescriptorFromSet the file I want to print
+	// According to the documentation of protoReflect.CreateFileDescriptorFromSet the file I want to print
 	// needs to be at the end of the array. All other FileDescriptorProto are dependencies.
-	fdSet.File = append([]*dpb.FileDescriptorProto{fd, fd2, fd3}, fdSet.File...)
-
+	fdSet.File = append([]*dpb.FileDescriptorProto{fd2, fd, fd3, fd4}, fdSet.File...)
 }
 
 // Builds protobuf messages from the surface model types. If the type is a RPC request parameter
@@ -150,27 +144,19 @@ func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) 
 					}
 				}
 			}
-
 			ctr := int32(i + 1)
-			label := getLabelForField(f)
-			name := getNameForField(f)
-			typeName := getTypeNameForField(f)
+			fieldDescriptor := &dpb.FieldDescriptorProto{Number: &ctr}
+			setFieldDescriptorLabel(fieldDescriptor, f)
+			setFieldDescriptorName(fieldDescriptor, f)
+			setFieldDescriptorType(fieldDescriptor, f)
+			setFieldDescriptorTypeName(fieldDescriptor, f)
 
-			protoType, err := getProtoTypeForField(f)
-			if err != nil {
-				log.Printf(err.Error())
-				continue
+			if strings.Contains(f.Type, "map") {
+				mapDescriptorProto := buildMapDescriptorProto(f)
+				fieldDescriptor.TypeName = mapDescriptorProto.Name
+				message.NestedType = append(message.NestedType, mapDescriptorProto)
 			}
-
-			fieldDescr := &dpb.FieldDescriptorProto{
-				Name:     name,
-				Number:   &ctr,
-				Label:    label,
-				Type:     protoType,
-				TypeName: typeName,
-			}
-
-			message.Field = append(message.Field, fieldDescr)
+			message.Field = append(message.Field, fieldDescriptor)
 		}
 		descr.MessageType = append(descr.MessageType, &message)
 	}
@@ -216,6 +202,44 @@ func buildServiceFromMethods(descr *dpb.FileDescriptorProto, renderer *Renderer)
 		service.Method = append(service.Method, mDescr)
 	}
 	return nil
+}
+
+// Builds the necessary descriptor to render a map. (https://developers.google.com/protocol-buffers/docs/proto3#maps)
+// A map is represented as nested message with two fields: 'key', 'value' and the Options set accordingly.
+func buildMapDescriptorProto(field *surface_v1.Field) *dpb.DescriptorProto {
+	isMapEntry := true
+	n := field.Name + "Entry"
+
+	mapDP := &dpb.DescriptorProto{
+		Name:    &n,
+		Field:   buildKeyValueFields(field),
+		Options: &dpb.MessageOptions{MapEntry: &isMapEntry},
+	}
+	return mapDP
+}
+
+// Builds the necessary 'key', 'value' fields for the map descriptor.
+func buildKeyValueFields(field *surface_v1.Field) []*dpb.FieldDescriptorProto {
+	k, v := "key", "value"
+	var n1, n2 int32 = 1, 2
+	l := dpb.FieldDescriptorProto_LABEL_OPTIONAL
+	t := dpb.FieldDescriptorProto_TYPE_STRING
+	keyField := &dpb.FieldDescriptorProto{
+		Name:   &k,
+		Number: &n1,
+		Label:  &l,
+		Type:   &t,
+	}
+
+	valueType := field.Type[11:] // This transforms a string like 'map[string]int32' to 'int32'. In other words: the type of the value from the map.
+	valueField := &dpb.FieldDescriptorProto{
+		Name:     &v,
+		Number:   &n2,
+		Label:    &l,
+		Type:     getProtoTypeForMapValueType(valueType),
+		TypeName: getTypeNameForMapValueType(valueType),
+	}
+	return []*dpb.FieldDescriptorProto{keyField, valueField}
 }
 
 // Validates if the path parameter has the requested structure.
@@ -285,6 +309,62 @@ func isRequestParameter(t *surface_v1.Type) bool {
 	return false
 }
 
+// Sets the Type of 'fd' according to the information from the surface field 'f'.
+func setFieldDescriptorType(fd *dpb.FieldDescriptorProto, f *surface_v1.Field) {
+	var protoType dpb.FieldDescriptorProto_Type
+	if t, ok := protoBufScalarTypes[f.Format]; ok { // Let's see if we can get the type from f.format
+		protoType = t
+	} else if t, ok := protoBufScalarTypes[f.Type]; ok { // Maybe this works.
+		protoType = t
+	} else if t, ok := openAPITypesToProtoBuf[f.Type]; ok { // Safety check
+		protoType = t
+	} else {
+		// TODO: What about Enums?
+		// Ok, is it either a reference or an array of non scalar-types or a map. All of those get represented as message
+		// inside the descriptor.
+		protoType = dpb.FieldDescriptorProto_TYPE_MESSAGE
+	}
+	fd.Type = &protoType
+
+}
+
+// Sets the Name of 'fd'. The convention inside .proto is, that all field names are
+// lowercase and all messages and types are capitalized if they are not scalar types (int64, string, ...).
+func setFieldDescriptorName(fd *dpb.FieldDescriptorProto, f *surface_v1.Field) {
+	name := strings.ToLower(f.Name)
+
+	if name == "200" {
+		name = "ok"
+	}
+	if name == "400" {
+		name = "badRequest"
+	}
+	fd.Name = &name
+}
+
+// Sets a Label for 'fd'. If it is an array we need the 'repeated' label.
+func setFieldDescriptorLabel(fd *dpb.FieldDescriptorProto, f *surface_v1.Field) {
+	label := dpb.FieldDescriptorProto_LABEL_OPTIONAL
+	if f.Kind == surface_v1.FieldKind_ARRAY || strings.Contains(f.Type, "map") {
+		label = dpb.FieldDescriptorProto_LABEL_REPEATED
+	}
+	fd.Label = &label
+}
+
+// Sets the TypeName of 'fd'. A TypeName has to be set if the field is a reference to another message. Otherwise it is nil.
+// The convention inside .proto is, that all field names are lowercase and all messages and types are capitalized if
+// they are not scalar types (int64, string, ...).
+func setFieldDescriptorTypeName(fd *dpb.FieldDescriptorProto, f *surface_v1.Field) {
+	typeName := ""
+	if *fd.Type == dpb.FieldDescriptorProto_TYPE_MESSAGE {
+		// It is either a reference or an array of non scalar-types or a map. In case of a map it will get overwritten again.
+		typeName = strings.Title(f.Type)
+	}
+	if typeName != "" {
+		fd.TypeName = &typeName
+	}
+}
+
 // Finds the corresponding surface model type for 'name' and returns the name of the field
 // that is a request body. If no such field is found it returns nil.
 func getRequestBodyForRequestParameters(name string, types []*surface_v1.Type) *string {
@@ -348,70 +428,6 @@ func getHttpRuleForMethod(method *surface_v1.Method, body *string) annotations.H
 	return httpRule
 }
 
-// Tries to find a dpb.FieldDescriptorProto_Type for 'f'. If no protobuf type exists we
-// return an error.
-func getProtoTypeForField(f *surface_v1.Field) (*dpb.FieldDescriptorProto_Type, error) {
-	// Let's see if we can get the type from f.format
-	if protoType, ok := protoBufTypes[f.Format]; ok {
-		return &protoType, nil
-	}
-
-	// Maybe this works.
-	if protoType, ok := protoBufTypes[f.Type]; ok {
-		return &protoType, nil
-	}
-
-	// Safety check
-	if protoType, ok := openAPITypesToProtoBuf[f.Type]; ok {
-		return &protoType, nil
-	}
-
-	// Ok, is it either a reference or an array of non scalar-types?
-	if f.Kind == surface_v1.FieldKind_REFERENCE || (f.Kind == surface_v1.FieldKind_ARRAY && !openAPIScalarTypes[f.Type]) {
-		protoType := dpb.FieldDescriptorProto_TYPE_MESSAGE // TODO: Could also be ENUM?
-		return &protoType, nil
-	}
-
-	// Panic!
-	return nil, errors.New("Unable to find a protobuf type for the surface model type: " + f.Type)
-
-}
-
-// Returns the name of the protobuf field. The convention inside .proto is, that all field names are
-// lowercase and all messages and types are capitalized if they are not scalar types (int64, string, ...).
-func getNameForField(f *surface_v1.Field) *string {
-	name := strings.ToLower(f.Name)
-
-	if name == "200" {
-		name = "ok"
-	}
-	if name == "400" {
-		name = "badRequest"
-	}
-	return &name
-}
-
-// Returns a dpb.FieldDescriptorProto_Label for 'f'. If it is an array we need the 'repeated' label.
-func getLabelForField(f *surface_v1.Field) *dpb.FieldDescriptorProto_Label {
-	res := dpb.FieldDescriptorProto_LABEL_OPTIONAL
-	if f.Kind == surface_v1.FieldKind_ARRAY {
-		res = dpb.FieldDescriptorProto_LABEL_REPEATED
-	}
-	return &res
-}
-
-// Returns the type of the reference. The convention inside .proto is, that all field names are
-// lowercase and all messages and types are capitalized if they are not scalar types (int64, string, ...).
-func getTypeNameForField(f *surface_v1.Field) *string {
-	if f.Kind == surface_v1.FieldKind_REFERENCE || (f.Kind == surface_v1.FieldKind_ARRAY && !openAPIScalarTypes[f.Type]) {
-		// It is either a reference or an array of non scalar-types.
-		typeName := strings.Title(f.Type)
-		return &typeName
-	}
-
-	return nil
-}
-
 // Searches all types from the surface model for a given type 'name'. Returns a type if there is
 // a match, nil if there is no match, and error if there are multiple types.
 func getType(name string, types []*surface_v1.Type) (*surface_v1.Type, error) {
@@ -429,6 +445,31 @@ func getType(name string, types []*surface_v1.Type) (*surface_v1.Type, error) {
 		return result[0], nil
 	}
 	return nil, nil
+}
+
+// Returns the type name for the given 'valueType'. A type name for a field is only set if it is some kind of
+// reference (non-scalar values) otherwise it is nil.
+func getTypeNameForMapValueType(valueType string) *string {
+	if _, ok := protoBufScalarTypes[valueType]; ok {
+		// Ok it is a scalar. For scalar values we don't set the TypeName of the field.
+		return nil
+	}
+	if strings.Contains(valueType, "[]") {
+		// We got an array as value type. This can't be represented inside .proto. So let's return the 'any' type.
+		anyType := ".google.protobuf.Any"
+		return &anyType
+	}
+	return &valueType
+}
+
+// Returns the 'protoType' for the given 'valueType'. If we don't have a scalar 'protoType', we have some kind of
+// reference to another object and therefore return the 'Message' type. d
+func getProtoTypeForMapValueType(valueType string) *dpb.FieldDescriptorProto_Type {
+	protoType := dpb.FieldDescriptorProto_TYPE_MESSAGE
+	if protoType, ok := protoBufScalarTypes[valueType]; ok {
+		return &protoType
+	}
+	return &protoType
 }
 
 // A map for this: https://developers.google.com/protocol-buffers/docs/proto3#scalar
@@ -475,3 +516,6 @@ func getOpenAPIScalarTypes() map[string]bool {
 		"boolean": true,
 	}
 }
+
+//TODO: Documentation inside checker.go
+//TODO: Check out test cases with resolve ref inside gnostic
