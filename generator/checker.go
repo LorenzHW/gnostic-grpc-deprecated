@@ -6,23 +6,26 @@ import (
 	"strings"
 )
 
-type FeatureChecker struct {
+type GrpcChecker struct {
 	// The document to be analyzed
 	document *openapiv3.Document
-	// The messages that are displayed to the user with information of what is not being processed
+	// The messages that are displayed to the user with information of what is not being processed by the generator.
 	messages []*plugins.Message
 }
 
-func NewFeatureChecker(document *openapiv3.Document) *FeatureChecker {
-	return &FeatureChecker{document: document, messages: make([]*plugins.Message, 0)}
+// Creates a new checker.
+func NewGrpcChecker(document *openapiv3.Document) *GrpcChecker {
+	return &GrpcChecker{document: document, messages: make([]*plugins.Message, 0)}
 }
 
-func (c *FeatureChecker) Run() []*plugins.Message {
+// Runs the checker. It is a top-down approach.
+func (c *GrpcChecker) Run() []*plugins.Message {
 	c.analyzeOpenAPIDocument()
 	return c.messages
 }
 
-func (c *FeatureChecker) analyzeOpenAPIDocument() {
+// Analyzes the root object.
+func (c *GrpcChecker) analyzeOpenAPIDocument() {
 	fields := getNotSupportedOpenAPIDocumentFields(c.document)
 	if len(fields) > 0 {
 		text := "Fields: " + strings.Join(fields, ", ") + " are not supported for Document with title: " + c.document.Info.Title
@@ -33,7 +36,8 @@ func (c *FeatureChecker) analyzeOpenAPIDocument() {
 	c.analyzePaths()
 }
 
-func (c *FeatureChecker) analyzeComponents() {
+// Analyzes the components of a OpenAPI description.
+func (c *GrpcChecker) analyzeComponents() {
 	components := c.document.Components
 
 	fields := getNotSupportedComponentsFields(components)
@@ -68,13 +72,15 @@ func (c *FeatureChecker) analyzeComponents() {
 	}
 }
 
-func (c *FeatureChecker) analyzePaths() {
+// Analyzes all paths.
+func (c *GrpcChecker) analyzePaths() {
 	for _, pathItem := range c.document.Paths.Path {
 		c.analyzePathItem(pathItem)
 	}
 }
 
-func (c *FeatureChecker) analyzePathItem(pair *openapiv3.NamedPathItem) {
+// Analyzes one single path.
+func (c *GrpcChecker) analyzePathItem(pair *openapiv3.NamedPathItem) {
 	pathItem := pair.Value
 
 	fields := getNotSupportedPathItemFields(pathItem)
@@ -90,7 +96,8 @@ func (c *FeatureChecker) analyzePathItem(pair *openapiv3.NamedPathItem) {
 	}
 }
 
-func (c *FeatureChecker) analyzeOperation(operation *openapiv3.Operation) {
+// Analyzes a single Operation.
+func (c *GrpcChecker) analyzeOperation(operation *openapiv3.Operation) {
 	fields := getNotSupportedOperationFields(operation)
 	if len(fields) > 0 {
 		text := "Fields:  " + strings.Join(fields, ", ") + " are not supported for operation: " + operation.OperationId
@@ -111,7 +118,8 @@ func (c *FeatureChecker) analyzeOperation(operation *openapiv3.Operation) {
 
 }
 
-func (c *FeatureChecker) analyzeParameter(paramOrRef *openapiv3.ParameterOrReference) {
+// Analyzes the parameter.
+func (c *GrpcChecker) analyzeParameter(paramOrRef *openapiv3.ParameterOrReference) {
 	if parameter := paramOrRef.GetParameter(); parameter != nil {
 		fields := getNotSupportedParameterFields(parameter)
 		if len(fields) > 0 {
@@ -123,7 +131,8 @@ func (c *FeatureChecker) analyzeParameter(paramOrRef *openapiv3.ParameterOrRefer
 	}
 }
 
-func (c *FeatureChecker) analyzeSchema(identifier string, schemaOrReference *openapiv3.SchemaOrReference) {
+// Analyzes the schema.
+func (c *GrpcChecker) analyzeSchema(identifier string, schemaOrReference *openapiv3.SchemaOrReference) {
 	if schema := schemaOrReference.GetSchema(); schema != nil {
 		fields := getNotSupportedSchemaFields(schema)
 		if len(fields) > 0 {
@@ -156,7 +165,8 @@ func (c *FeatureChecker) analyzeSchema(identifier string, schemaOrReference *ope
 	}
 }
 
-func (c *FeatureChecker) analyzeResponse(pair *openapiv3.NamedResponseOrReference) {
+// Analyzes a response.
+func (c *GrpcChecker) analyzeResponse(pair *openapiv3.NamedResponseOrReference) {
 	if response := pair.Value.GetResponse(); response != nil {
 		fields := getNotSupportedResponseFields(response)
 		if len(fields) > 0 {
@@ -172,7 +182,8 @@ func (c *FeatureChecker) analyzeResponse(pair *openapiv3.NamedResponseOrReferenc
 	}
 }
 
-func (c *FeatureChecker) analyzeRequestBody(pair *openapiv3.NamedRequestBodyOrReference) {
+// Analyzes a request body.
+func (c *GrpcChecker) analyzeRequestBody(pair *openapiv3.NamedRequestBodyOrReference) {
 	if requestBody := pair.Value.GetRequestBody(); requestBody != nil {
 		if requestBody.Required {
 			text := "Fields: Required are not supported for the request: " + pair.Name
@@ -185,7 +196,8 @@ func (c *FeatureChecker) analyzeRequestBody(pair *openapiv3.NamedRequestBodyOrRe
 	}
 }
 
-func (c *FeatureChecker) analyzeContent(pair *openapiv3.NamedMediaType) {
+// Analyzes the content of a response.
+func (c *GrpcChecker) analyzeContent(pair *openapiv3.NamedMediaType) {
 	mediaType := pair.Value
 
 	fields := getNotSupportedMediaTypeFields(mediaType)
@@ -200,6 +212,7 @@ func (c *FeatureChecker) analyzeContent(pair *openapiv3.NamedMediaType) {
 	}
 }
 
+// Constructs a message which the end user will see on the console.
 func constructMessage(code string, text string, keys []string) *plugins.Message {
 	return &plugins.Message{
 		Code:  code,
@@ -209,6 +222,7 @@ func constructMessage(code string, text string, keys []string) *plugins.Message 
 	}
 }
 
+// Returns all valid operations that will be transcoded by the plugin.
 func getValidOperations(pathItem *openapiv3.PathItem) []*openapiv3.Operation {
 	operations := make([]*openapiv3.Operation, 0)
 	if pathItem == nil {
@@ -233,6 +247,7 @@ func getValidOperations(pathItem *openapiv3.PathItem) []*openapiv3.Operation {
 	return operations
 }
 
+// Returns fields that the won't be considered by the plugin for document.
 func getNotSupportedOpenAPIDocumentFields(document *openapiv3.Document) []string {
 	fields := make([]string, 0)
 	if document == nil {
@@ -254,6 +269,7 @@ func getNotSupportedOpenAPIDocumentFields(document *openapiv3.Document) []string
 	return fields
 }
 
+// Returns fields that the won't be considered by the plugin for parameter.
 func getNotSupportedParameterFields(parameter *openapiv3.Parameter) []string {
 	fields := make([]string, 0)
 	if parameter == nil {
@@ -290,6 +306,7 @@ func getNotSupportedParameterFields(parameter *openapiv3.Parameter) []string {
 	return fields
 }
 
+// Returns fields that the won't be considered by the plugin for schema.
 func getNotSupportedSchemaFields(schema *openapiv3.Schema) []string {
 	fields := make([]string, 0)
 	if schema == nil {
@@ -383,6 +400,7 @@ func getNotSupportedSchemaFields(schema *openapiv3.Schema) []string {
 	return fields
 }
 
+// Returns fields that the won't be considered by the plugin for mediaType.
 func getNotSupportedMediaTypeFields(mediaType *openapiv3.MediaType) []string {
 	fields := make([]string, 0)
 	if mediaType == nil {
@@ -400,6 +418,7 @@ func getNotSupportedMediaTypeFields(mediaType *openapiv3.MediaType) []string {
 	return fields
 }
 
+// Returns fields that the won't be considered by the plugin for operation.
 func getNotSupportedOperationFields(operation *openapiv3.Operation) []string {
 	fields := make([]string, 0)
 	if operation == nil {
@@ -426,6 +445,7 @@ func getNotSupportedOperationFields(operation *openapiv3.Operation) []string {
 	return fields
 }
 
+// Returns fields that the won't be considered by the plugin for response.
 func getNotSupportedResponseFields(response *openapiv3.Response) []string {
 	fields := make([]string, 0)
 	if response == nil {
@@ -440,6 +460,7 @@ func getNotSupportedResponseFields(response *openapiv3.Response) []string {
 	return fields
 }
 
+// Returns fields that the won't be considered by the plugin for pathItem.
 func getNotSupportedPathItemFields(pathItem *openapiv3.PathItem) []string {
 	fields := make([]string, 0)
 	if pathItem == nil {
@@ -463,6 +484,7 @@ func getNotSupportedPathItemFields(pathItem *openapiv3.PathItem) []string {
 	return fields
 }
 
+// Returns fields that the won't be considered by the plugin for components.
 func getNotSupportedComponentsFields(components *openapiv3.Components) []string {
 	fields := make([]string, 0)
 	if components == nil {

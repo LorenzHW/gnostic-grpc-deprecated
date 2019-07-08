@@ -45,7 +45,7 @@ func RunProtoGenerator() {
 			err := proto.Unmarshal(model.Value, openAPIdocument)
 
 			if err == nil {
-				featureChecker := NewFeatureChecker(openAPIdocument)
+				featureChecker := NewGrpcChecker(openAPIdocument)
 				env.Response.Messages = featureChecker.Run()
 			}
 		case "surface.v1.Model":

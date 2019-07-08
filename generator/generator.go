@@ -517,5 +517,4 @@ func getOpenAPIScalarTypes() map[string]bool {
 	}
 }
 
-//TODO: Documentation inside checker.go
 //TODO: Check out test cases with resolve ref inside gnostic

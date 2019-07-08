@@ -11,7 +11,7 @@ func TestNewFeatureCheckerParameters(t *testing.T) {
 	input := "testfiles/parameters.yaml"
 	documentv3 := readOpenAPIBinary(input)
 
-	checker := NewFeatureChecker(documentv3)
+	checker := NewGrpcChecker(documentv3)
 	messages := checker.Run()
 	expectedMessageTexts := []string{
 		"Fields: Explode are not supported for parameter: param2",
@@ -27,7 +27,7 @@ func TestFeatureCheckerRequestBodies(t *testing.T) {
 	input := "testfiles/requestBodies.yaml"
 	documentv3 := readOpenAPIBinary(input)
 
-	checker := NewFeatureChecker(documentv3)
+	checker := NewGrpcChecker(documentv3)
 	messages := checker.Run()
 	expectedMessageTexts := []string{
 		"Fields: Required are not supported for the schema: Person",
@@ -42,7 +42,7 @@ func TestFeatureCheckerResponses(t *testing.T) {
 	input := "testfiles/responses.yaml"
 	documentv3 := readOpenAPIBinary(input)
 
-	checker := NewFeatureChecker(documentv3)
+	checker := NewGrpcChecker(documentv3)
 	messages := checker.Run()
 	expectedMessageTexts := []string{
 		"Fields: Required are not supported for the schema: Error",
@@ -57,7 +57,7 @@ func TestFeatureCheckerOther(t *testing.T) {
 	input := "testfiles/other.yaml"
 	documentv3 := readOpenAPIBinary(input)
 
-	checker := NewFeatureChecker(documentv3)
+	checker := NewGrpcChecker(documentv3)
 	messages := checker.Run()
 	expectedMessageTexts := []string{
 		"Fields: Required are not supported for the schema: Person",
@@ -69,7 +69,7 @@ func TestFeatureCheckerOther(t *testing.T) {
 
 func validateMessages(t *testing.T, expectedMessageTexts []string, messages []*plugins.Message) {
 	if len(expectedMessageTexts) != len(messages) {
-		t.Errorf("Number of messages from FeatureChecker does not match expected number")
+		t.Errorf("Number of messages from GrpcChecker does not match expected number")
 	}
 	for i, msg := range messages {
 		if msg.Text != expectedMessageTexts[i] {
