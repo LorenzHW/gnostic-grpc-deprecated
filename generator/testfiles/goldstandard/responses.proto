@@ -6,6 +6,8 @@ import "google/api/annotations.proto";
 
 import "google/protobuf/empty.proto";
 
+import "google/protobuf/any.proto";
+
 message Error {
   int32 code = 1;
 
@@ -42,9 +44,6 @@ message TestResponse400StatusCodeResponses {
   Error badRequest = 1;
 }
 
-message TestResponseAdditionalPropertiesResponses {
-}
-
 message TestResponseComponentReferenceResponses {
   Response ok = 1;
 }
@@ -64,10 +63,6 @@ service TestPackage {
 
   rpc TestResponse400StatusCode ( google.protobuf.Empty ) returns ( TestResponse400StatusCodeResponses ) {
     option (google.api.http) = { get:"/testResponse400StatusCode"  };
-  }
-
-  rpc TestResponseAdditionalProperties ( google.protobuf.Empty ) returns ( TestResponseAdditionalPropertiesResponses ) {
-    option (google.api.http) = { get:"/testResponseAdditionalProperties"  };
   }
 
   rpc TestResponseComponentReference ( google.protobuf.Empty ) returns ( TestResponseComponentReferenceResponses ) {
