@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -26,8 +27,7 @@ func TestFileDescriptorGeneratorParameters(t *testing.T) {
 
 	protoData, err := runGeneratorWithoutEnvironment(input)
 	if err != nil {
-		t.Errorf("Error while executing the descriptor generator")
-		t.Errorf(err.Error())
+		handleError(err, t)
 	}
 
 	checkContents(t, string(protoData), "goldstandard/parameter.proto")
@@ -54,8 +54,7 @@ func TestFileDescriptorGeneratorRequestBodies(t *testing.T) {
 
 	protoData, err := runGeneratorWithoutEnvironment(input)
 	if err != nil {
-		t.Errorf("Error while executing the protoc-generator")
-		t.Errorf(err.Error())
+		handleError(err, t)
 	}
 
 	checkContents(t, string(protoData), "goldstandard/requestbodies.proto")
@@ -67,10 +66,19 @@ func TestFileDescriptorGeneratorResponses(t *testing.T) {
 
 	protoData, err := runGeneratorWithoutEnvironment(input)
 	if err != nil {
-		t.Errorf("Error while executing the protoc-generator")
-		t.Errorf(err.Error())
+		handleError(err, t)
 	}
 	checkContents(t, string(protoData), "goldstandard/responses.proto")
+}
+
+func TestFileDescriptorGeneratorOther(t *testing.T) {
+	input := "testfiles/other.yaml"
+
+	protoData, err := runGeneratorWithoutEnvironment(input)
+	if err != nil {
+		handleError(err, t)
+	}
+	checkContents(t, string(protoData), "goldstandard/other.proto")
 }
 
 func runGeneratorWithoutEnvironment(input string) ([]byte, error) {
@@ -135,4 +143,12 @@ func createOpenAPIdocFromGnosticOutput(binaryInput []byte) (*openapiv3.Document,
 		}
 	}
 	return document, nil
+}
+
+func handleError(err error, t *testing.T) {
+	t.Errorf("Error while executing the protoc-generator")
+	if strings.Contains(err.Error(), "included an unresolvable reference") {
+		t.Errorf("This could be due to the fact that a 'typeName' is nil on a FieldDescriptorProto")
+	}
+	t.Errorf(err.Error())
 }

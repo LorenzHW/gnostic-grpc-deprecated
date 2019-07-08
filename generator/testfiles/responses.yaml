@@ -58,19 +58,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /testResponseAdditionalProperties: #TODO: Does not work ATM
-    get:
-      operationId: testResponseAdditionalProperties
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties:
-                  type: integer
-                  format: int32
   /testResponseComponentReference:
     get:
       operationId: testResponseComponentReference
