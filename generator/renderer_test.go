@@ -152,3 +152,16 @@ func handleError(err error, t *testing.T) {
 	}
 	t.Errorf(err.Error())
 }
+
+// Sometimes I need
+//func buildFdsetFromProto() {
+//	b, err := ioutil.ReadFile("temp.descr")
+//	if err != nil {
+//		fmt.Print(err.Error())
+//	}
+//	fdSet := &descriptor.FileDescriptorSet{}
+//	err = proto.Unmarshal(b, fdSet)
+//	if err != nil {
+//		fmt.Print(err.Error())
+//	}
+//}
