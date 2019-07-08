@@ -18,11 +18,11 @@ func NewFeatureChecker(document *openapiv3.Document) *FeatureChecker {
 }
 
 func (c *FeatureChecker) Run() []*plugins.Message {
-	c.analyzeOpenAPIdocument()
+	c.analyzeOpenAPIDocument()
 	return c.messages
 }
 
-func (c *FeatureChecker) analyzeOpenAPIdocument() {
+func (c *FeatureChecker) analyzeOpenAPIDocument() {
 	fields := getNotSupportedOpenAPIDocumentFields(c.document)
 	if len(fields) > 0 {
 		text := "Fields: " + strings.Join(fields, ", ") + " are not supported for Document with title: " + c.document.Info.Title
@@ -101,6 +101,14 @@ func (c *FeatureChecker) analyzeOperation(operation *openapiv3.Operation) {
 	for _, param := range operation.Parameters {
 		c.analyzeParameter(param)
 	}
+
+	for _, response := range operation.Responses.GetResponseOrReference() {
+		c.analyzeResponse(response)
+	}
+
+	wrap := &openapiv3.NamedRequestBodyOrReference{Name: operation.OperationId, Value: operation.RequestBody}
+	c.analyzeRequestBody(wrap)
+
 }
 
 func (c *FeatureChecker) analyzeParameter(paramOrRef *openapiv3.ParameterOrReference) {
@@ -156,9 +164,10 @@ func (c *FeatureChecker) analyzeResponse(pair *openapiv3.NamedResponseOrReferenc
 			msg := constructMessage("RESPONSEFIELDS", text, []string{"Response", pair.Name})
 			c.messages = append(c.messages, msg)
 		}
-
-		for _, pair := range response.Content.AdditionalProperties {
-			c.analyzeContent(pair)
+		if content := response.Content; content != nil {
+			for _, pair := range content.AdditionalProperties {
+				c.analyzeContent(pair)
+			}
 		}
 	}
 }
@@ -202,6 +211,9 @@ func constructMessage(code string, text string, keys []string) *plugins.Message 
 
 func getValidOperations(pathItem *openapiv3.PathItem) []*openapiv3.Operation {
 	operations := make([]*openapiv3.Operation, 0)
+	if pathItem == nil {
+		return operations
+	}
 
 	if pathItem.Get != nil {
 		operations = append(operations, pathItem.Get)
@@ -223,6 +235,9 @@ func getValidOperations(pathItem *openapiv3.PathItem) []*openapiv3.Operation {
 
 func getNotSupportedOpenAPIDocumentFields(document *openapiv3.Document) []string {
 	fields := make([]string, 0)
+	if document == nil {
+		return fields
+	}
 
 	if document.Servers != nil {
 		fields = append(fields, "Servers")
@@ -241,6 +256,9 @@ func getNotSupportedOpenAPIDocumentFields(document *openapiv3.Document) []string
 
 func getNotSupportedParameterFields(parameter *openapiv3.Parameter) []string {
 	fields := make([]string, 0)
+	if parameter == nil {
+		return fields
+	}
 	if parameter.Required {
 		fields = append(fields, "Required")
 	}
@@ -274,6 +292,9 @@ func getNotSupportedParameterFields(parameter *openapiv3.Parameter) []string {
 
 func getNotSupportedSchemaFields(schema *openapiv3.Schema) []string {
 	fields := make([]string, 0)
+	if schema == nil {
+		return fields
+	}
 	if schema.Nullable {
 		fields = append(fields, "Nullable")
 	}
@@ -364,6 +385,9 @@ func getNotSupportedSchemaFields(schema *openapiv3.Schema) []string {
 
 func getNotSupportedMediaTypeFields(mediaType *openapiv3.MediaType) []string {
 	fields := make([]string, 0)
+	if mediaType == nil {
+		return fields
+	}
 	if mediaType.Examples != nil {
 		fields = append(fields, "Examples")
 	}
@@ -378,6 +402,9 @@ func getNotSupportedMediaTypeFields(mediaType *openapiv3.MediaType) []string {
 
 func getNotSupportedOperationFields(operation *openapiv3.Operation) []string {
 	fields := make([]string, 0)
+	if operation == nil {
+		return fields
+	}
 	if operation.Tags != nil {
 		fields = append(fields, "Tags")
 	}
@@ -401,6 +428,9 @@ func getNotSupportedOperationFields(operation *openapiv3.Operation) []string {
 
 func getNotSupportedResponseFields(response *openapiv3.Response) []string {
 	fields := make([]string, 0)
+	if response == nil {
+		return nil
+	}
 	if response.Links != nil {
 		fields = append(fields, "Links")
 	}
@@ -412,6 +442,9 @@ func getNotSupportedResponseFields(response *openapiv3.Response) []string {
 
 func getNotSupportedPathItemFields(pathItem *openapiv3.PathItem) []string {
 	fields := make([]string, 0)
+	if pathItem == nil {
+		return fields
+	}
 	if pathItem.Head != nil {
 		fields = append(fields, "Head")
 	}
@@ -432,6 +465,10 @@ func getNotSupportedPathItemFields(pathItem *openapiv3.PathItem) []string {
 
 func getNotSupportedComponentsFields(components *openapiv3.Components) []string {
 	fields := make([]string, 0)
+	if components == nil {
+		return fields
+	}
+
 	if components.Examples != nil {
 		fields = append(fields, "Examples")
 	}

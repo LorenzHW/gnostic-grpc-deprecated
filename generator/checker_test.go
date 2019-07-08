@@ -53,6 +53,20 @@ func TestFeatureCheckerResponses(t *testing.T) {
 	validateMessages(t, expectedMessageTexts, messages)
 }
 
+func TestFeatureCheckerOther(t *testing.T) {
+	input := "testfiles/other.yaml"
+	documentv3 := readOpenAPIBinary(input)
+
+	checker := NewFeatureChecker(documentv3)
+	messages := checker.Run()
+	expectedMessageTexts := []string{
+		"Fields: Required are not supported for the schema: Person",
+		"Fields: Example are not supported for the schema: name",
+		"Fields: Xml are not supported for the schema: photoUrls",
+	}
+	validateMessages(t, expectedMessageTexts, messages)
+}
+
 func validateMessages(t *testing.T, expectedMessageTexts []string, messages []*plugins.Message) {
 	if len(expectedMessageTexts) != len(messages) {
 		t.Errorf("Number of messages from FeatureChecker does not match expected number")
