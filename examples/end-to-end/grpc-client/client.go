@@ -4,7 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/LorenzHW/gnostic-protoc-generator/examples/end-to-end/bookstore"
+	"github.com/LorenzHW/gnostic-grpc/examples/end-to-end/bookstore"
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
 	"log"

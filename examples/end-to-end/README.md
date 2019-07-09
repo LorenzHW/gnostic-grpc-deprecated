@@ -5,7 +5,8 @@ OpenAPI description.
 
 
 #### What we will build:
-![alt text](https://camo.githubusercontent.com/e75a8b46b078a3c1df0ed9966a16c24add9ccb83/68747470733a2f2f646f63732e676f6f676c652e636f6d2f64726177696e67732f642f3132687034435071724e5046686174744c5f63496f4a707446766c41716d35774c513067677149356d6b43672f7075623f773d37343926683d333730 "gRPC with Transcoding")
+
+![alt text](https://drive.google.com/uc?export=view&id=118eI8Tb88gJF47nclHbLxqOS1N_ygt4o "gRPC with Transcoding")
 
 This tutorial has six steps:
 
@@ -17,12 +18,12 @@ This tutorial has six steps:
 6. Test your API with with curl and a gRPC client.
 
 #### Prerequisite
-Install [gnostic](https://github.com/googleapis/gnostic), [gnostic-protoc-generator](https://github.com/LorenzHW/gnostic-protoc-generator),
+Install [gnostic](https://github.com/googleapis/gnostic), [gnostic-grpc](https://github.com/LorenzHW/gnostic-grpc),
 [go plugin for protoc](https://github.com/golang/protobuf/protoc-gen-go), [gRPC gateway plugin](https://github.com/grpc-ecosystem/grpc-gateway)
 and [gRPC](https://grpc.io/)
 
     go get -u github.com/googleapis/gnostic
-    go get -u github.com/LorenzHW/gnostic-protoc-generator
+    go get -u github.com/LorenzHW/gnostic-grpc
     go get -u github.com/golang/protobuf/protoc-gen-go
     go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
     go get -u google.golang.org/grpc
@@ -38,7 +39,7 @@ In order for this tutorial to work you should work inside this directory under `
 Use [gnostic](https://github.com/googleapis/gnostic) to generate the Protocol buffer 
 description (`bookstore.proto`) in the current directory:
 
-    gnostic --protoc-generator-out=. bookstore.yaml
+    gnostic --grpc-out=. bookstore.yaml
 
 #### 2. Step
 Generate the gRPC stubs:
