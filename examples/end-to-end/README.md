@@ -55,7 +55,9 @@ We added an example implementation of the server using the generated gRPC stubs 
 Generate the reverse proxy with the gRPC gateway plugin:
 
     protoc --proto_path=. --proto_path=${ANNOTATIONS} --grpc-gateway_out=bookstore bookstore.proto
-    
+
+This generates `bookstore/bookstore.pb.gw.go`.
+
 We provided a sample implementation on how to use the proxy inside `bookstore/proxy.go`.
 
 #### 5. Step
