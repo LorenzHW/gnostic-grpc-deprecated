@@ -15,7 +15,7 @@ const (
 	// When false, test behaves normally, checking output against golden test files.
 	// But when changed to true, running test will actually re-generate golden test
 	// files (which assumes output is correct).
-	regenerateMode = false
+	regenerateMode = true
 
 	testFilesDirectory = "testfiles"
 )
@@ -23,12 +23,12 @@ const (
 func TestFileDescriptorGeneratorParameters(t *testing.T) {
 	input := "testfiles/parameters.yaml"
 
-	protoData, err := runGeneratorWithoutEnvironment(input)
+	protoData, err := runGeneratorWithoutEnvironment(input, "parameters")
 	if err != nil {
 		handleError(err, t)
 	}
 
-	checkContents(t, string(protoData), "goldstandard/parameter.proto")
+	checkContents(t, string(protoData), "goldstandard/parameters.proto")
 
 	erroneousInput := []string{"testfiles/errors/invalid_path_param.yaml", "testfiles/errors/invalid_query_param.yaml"}
 
@@ -37,7 +37,7 @@ func TestFileDescriptorGeneratorParameters(t *testing.T) {
 			"The path parameter with the Name param1 is invalid. The path template may refer to one or more fields in the gRPC request message, as long as each field is a non-repeated field with a primitive (non-message) type": true,
 			"The query parameter with the Name param1 is invalid. Note that fields which are mapped to URL query parameters must have a primitive type or a repeated primitive type or a non-repeated message type.":               true,
 		}
-		protoData, err = runGeneratorWithoutEnvironment(errorInput)
+		protoData, err = runGeneratorWithoutEnvironment(errorInput, "parameters")
 		if _, ok := errorMessages[err.Error()]; !ok {
 			// If we don't get an error from the generator the test fails!
 			t.Errorf("Error while executing the descriptor generator")
@@ -50,7 +50,7 @@ func TestFileDescriptorGeneratorParameters(t *testing.T) {
 func TestFileDescriptorGeneratorRequestBodies(t *testing.T) {
 	input := "testfiles/requestBodies.yaml"
 
-	protoData, err := runGeneratorWithoutEnvironment(input)
+	protoData, err := runGeneratorWithoutEnvironment(input, "requestbodies")
 	if err != nil {
 		handleError(err, t)
 	}
@@ -62,7 +62,7 @@ func TestFileDescriptorGeneratorRequestBodies(t *testing.T) {
 func TestFileDescriptorGeneratorResponses(t *testing.T) {
 	input := "testfiles/responses.yaml"
 
-	protoData, err := runGeneratorWithoutEnvironment(input)
+	protoData, err := runGeneratorWithoutEnvironment(input, "responses")
 	if err != nil {
 		handleError(err, t)
 	}
@@ -72,24 +72,24 @@ func TestFileDescriptorGeneratorResponses(t *testing.T) {
 func TestFileDescriptorGeneratorOther(t *testing.T) {
 	input := "testfiles/other.yaml"
 
-	protoData, err := runGeneratorWithoutEnvironment(input)
+	protoData, err := runGeneratorWithoutEnvironment(input, "other")
 	if err != nil {
 		handleError(err, t)
 	}
 	checkContents(t, string(protoData), "goldstandard/other.proto")
 }
 
-func runGeneratorWithoutEnvironment(input string) ([]byte, error) {
+func runGeneratorWithoutEnvironment(input string, packageName string) ([]byte, error) {
 	surfaceModel := buildSurfaceModel(input)
 	r := NewRenderer(surfaceModel)
-	r.Package = "testPackage"
+	r.Package = packageName
 
-	fdSet, err := r.RunFileDescriptorSetGenerator()
+	fdSet, err := r.runFileDescriptorSetGenerator()
 	r.FdSet = fdSet
 	if err != nil {
 		return nil, err
 	}
-	f, err := r.RenderProto("")
+	f, err := r.RenderProto(fdSet, "")
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func runGeneratorWithoutEnvironment(input string) ([]byte, error) {
 func buildSurfaceModel(input string) *surface.Model {
 	cmd := exec.Command("gnostic", "--pb-out=-", input)
 	b, _ := cmd.Output()
-	documentv3, _ := createOpenAPIdocFromGnosticOutput(b)
+	documentv3, _ := createOpenAPIDocFromGnosticOutput(b)
 	surfaceModel, _ := surface.NewModelFromOpenAPI3(documentv3, input)
 	return surfaceModel
 }
