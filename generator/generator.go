@@ -21,8 +21,12 @@ import (
 	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
+	openapiv3 "github.com/googleapis/gnostic/OpenAPIv3"
 	surface_v1 "github.com/googleapis/gnostic/surface"
 	"google.golang.org/genproto/googleapis/api/annotations"
+	"os/exec"
+	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -30,37 +34,113 @@ var protoBufScalarTypes = getProtobufTypes()
 var openAPITypesToProtoBuf = getOpenAPITypesToProtoBufTypes()
 var openAPIScalarTypes = getOpenAPIScalarTypes()
 
+// Gathers all external dependencies we generated in recursive calls.
+var generatedDependencies = make(map[string]bool, 0)
+
+// Gathers all messages that have been generated from external dependencies in recursive calls.
+var generatedMessages = make(map[string]string, 0)
+
 // Uses the output of gnostic to return a dpb.FileDescriptorSet (in bytes). 'renderer' contains
 // the 'model' (surface model) which has all the relevant data to create the dpb.FileDescriptorSet.
-// There are three main steps:
-// 		1. buildDependencies is called to add dependencies to a FileDescriptorProto
+// There are four main steps:
+// 		1. buildDependencies to build all static FileDescriptorProto we need.
+// 		2. buildExternalDependencies recursively executes this plugin to generate all FileDescriptorSet based on external dependencies.
 //		2. buildMessagesFromTypes is called to create all messages which will be rendered in .proto
 //		3. buildServiceFromMethods is called to create a RPC service which will be rendered in .proto
-func (renderer *Renderer) RunFileDescriptorSetGenerator() (fdSet *dpb.FileDescriptorSet, err error) {
+func (renderer *Renderer) runFileDescriptorSetGenerator() (fdSet *dpb.FileDescriptorSet, err error) {
 	syntax := "proto3"
+	n := renderer.Package + ".proto"
 
-	fdProto := &dpb.FileDescriptorProto{
-		Name:    &renderer.Package,
+	// mainProto is the proto we ultimately want to render.
+	mainProto := &dpb.FileDescriptorProto{
+		Name:    &n,
 		Package: &renderer.Package,
 		Syntax:  &syntax,
 	}
 	fdSet = &dpb.FileDescriptorSet{
-		File: []*dpb.FileDescriptorProto{fdProto},
+		File: []*dpb.FileDescriptorProto{mainProto},
 	}
 
 	buildDependencies(fdSet)
-
-	err = buildMessagesFromTypes(fdProto, renderer)
+	err = buildExternalDependencies(fdSet, renderer)
 	if err != nil {
 		return nil, err
 	}
 
-	err = buildServiceFromMethods(fdProto, renderer)
+	addDependencies(fdSet)
+
+	err = buildMessagesFromTypes(mainProto, renderer)
+	if err != nil {
+		return nil, err
+	}
+
+	err = buildServiceFromMethods(mainProto, renderer)
 	if err != nil {
 		return nil, err
 	}
 
 	return fdSet, err
+}
+
+// Adds the dependencies to the FileDescriptor we want to render. This essentially makes the 'import' statements
+// inside the .proto definition.
+func addDependencies(fdSet *dpb.FileDescriptorSet) {
+	// At last, we need to add the dependencies to the FileDescriptorProto in order to get them rendered.
+	lastFdProto := getLast(fdSet.File)
+	for _, fd := range fdSet.File {
+		if fd != lastFdProto {
+			lastFdProto.Dependency = append(lastFdProto.Dependency, *fd.Name)
+		}
+	}
+}
+
+// buildExternalDependencies recursively generates all .proto definitions to external OpenAPI descriptions (URLs to other
+// descriptions inside the description).
+func buildExternalDependencies(fdSet *dpb.FileDescriptorSet, renderer *Renderer) (err error) {
+	externalDependencies := renderer.Model.Dependencies
+	externalDependencies = trimAndRemoveDuplicates(externalDependencies)
+
+	externalFileDescriptorProtos := make([]*dpb.FileDescriptorProto, 0)
+	for _, dep := range externalDependencies {
+		if _, alreadyGenerated := generatedDependencies[dep]; !alreadyGenerated {
+			generatedDependencies[dep] = true
+
+			// Lets get the standard gnostic output from the external dependency.
+			cmd := exec.Command("gnostic", "--pb-out=-", dep)
+			b, err := cmd.Output()
+			if err != nil {
+				return err
+			}
+
+			// Construct an OpenAPI document v3.
+			document, err := createOpenAPIDocFromGnosticOutput(b)
+			if err != nil {
+				return err
+			}
+
+			// Create the surface model. Keep in mind that this resolves the dependencies of the external dep again!
+			surfaceModel, err := surface_v1.NewModelFromOpenAPI3(document, dep)
+			if err != nil {
+				return err
+			}
+
+			// Recursively call the generator.
+			recursiveRenderer := NewRenderer(surfaceModel)
+			fileName := path.Base(dep)
+			recursiveRenderer.Package = strings.TrimSuffix(fileName, filepath.Ext(fileName))
+			newFdSet, err := recursiveRenderer.runFileDescriptorSetGenerator()
+			if err != nil {
+				return err
+			}
+			renderer.ExternalFdSets = append(renderer.ExternalFdSets, newFdSet)
+
+			dependencyProto := getLast(newFdSet.File)
+			externalFileDescriptorProtos = append(externalFileDescriptorProtos, dependencyProto)
+		}
+	}
+
+	fdSet.File = append(externalFileDescriptorProtos, fdSet.File...)
+	return nil
 }
 
 // Protoreflect needs all the dependencies that are used inside of the FileDescriptorProto (that gets rendered)
@@ -100,20 +180,16 @@ func buildDependencies(fdSet *dpb.FileDescriptorSet) {
 
 	// Build other required dependencies
 	e := empty.Empty{}
-	fdp := dpb.FieldDescriptorProto{}
+	fdp := dpb.DescriptorProto{}
 	a := any.Any{}
 	fd2, _ := descriptor.ForMessage(&e)
 	fd3, _ := descriptor.ForMessage(&fdp)
 	fd4, _ := descriptor.ForMessage(&a)
-
-	// At last, we need to add the dependencies to the FileDescriptorProto in order to get them rendered.
-	dependencies := []string{"google/api/annotations.proto", "google/protobuf/empty.proto", "google/protobuf/any.proto"}
-	lastFdProto := fdSet.File[len(fdSet.File)-1]
-	lastFdProto.Dependency = append(lastFdProto.Dependency, dependencies...)
+	dependencies := []*dpb.FileDescriptorProto{fd, fd2, fd3, fd4}
 
 	// According to the documentation of protoReflect.CreateFileDescriptorFromSet the file I want to print
 	// needs to be at the end of the array. All other FileDescriptorProto are dependencies.
-	fdSet.File = append([]*dpb.FileDescriptorProto{fd2, fd, fd3, fd4}, fdSet.File...)
+	fdSet.File = append(dependencies, fdSet.File...)
 }
 
 // Builds protobuf messages from the surface model types. If the type is a RPC request parameter
@@ -149,7 +225,7 @@ func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) 
 			setFieldDescriptorLabel(fieldDescriptor, f)
 			setFieldDescriptorName(fieldDescriptor, f)
 			setFieldDescriptorType(fieldDescriptor, f)
-			setFieldDescriptorTypeName(fieldDescriptor, f)
+			setFieldDescriptorTypeName(fieldDescriptor, f, renderer.Package)
 
 			if strings.Contains(f.Type, "map") {
 				mapDescriptorProto := buildMapDescriptorProto(f)
@@ -159,6 +235,7 @@ func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) 
 			message.Field = append(message.Field, fieldDescriptor)
 		}
 		descr.MessageType = append(descr.MessageType, &message)
+		generatedMessages[*message.Name] = renderer.Package + "." + *message.Name
 	}
 	return nil
 }
@@ -354,11 +431,18 @@ func setFieldDescriptorLabel(fd *dpb.FieldDescriptorProto, f *surface_v1.Field) 
 // Sets the TypeName of 'fd'. A TypeName has to be set if the field is a reference to another message. Otherwise it is nil.
 // The convention inside .proto is, that all field names are lowercase and all messages and types are capitalized if
 // they are not scalar types (int64, string, ...).
-func setFieldDescriptorTypeName(fd *dpb.FieldDescriptorProto, f *surface_v1.Field) {
+func setFieldDescriptorTypeName(fd *dpb.FieldDescriptorProto, f *surface_v1.Field, packageName string) {
 	typeName := ""
+	// A field with a type of Message always has a typeName associated with it (the name of the Message).
 	if *fd.Type == dpb.FieldDescriptorProto_TYPE_MESSAGE {
-		// It is either a reference or an array of non scalar-types or a map. In case of a map it will get overwritten again.
-		typeName = strings.Title(f.Type)
+		// Lets default to the type we get from the surface model
+		typeName = packageName + "." + strings.Title(f.Type)
+
+		// Check whether we generated this message already inside of another dependency. If so we will use that name instead.
+		if n, ok := generatedMessages[f.Type]; ok {
+			typeName = n
+		}
+
 	}
 	if typeName != "" {
 		fd.TypeName = &typeName
@@ -472,6 +556,46 @@ func getProtoTypeForMapValueType(valueType string) *dpb.FieldDescriptorProto_Typ
 	return &protoType
 }
 
+// Uses the 'binaryInput' from gnostic to create a OpenAPI document.
+func createOpenAPIDocFromGnosticOutput(binaryInput []byte) (*openapiv3.Document, error) {
+	document := &openapiv3.Document{}
+	err := proto.Unmarshal(binaryInput, document)
+	if err != nil {
+		// If we execute gnostic with argument: '-pb-out=-' we get an EOF. So lets only return other errors.
+		if err.Error() != "unexpected EOF" {
+			return nil, err
+		}
+	}
+	return document, nil
+}
+
+// 'externalDependencies' is a list of URLs to other OpenAPI descriptions. We need
+// the base of all URLs and no duplicates.
+func trimAndRemoveDuplicates(externalDependencies []string) []string {
+	result := make([]string, 0)
+	for _, dep := range externalDependencies {
+		parts := strings.Split(dep, "#")
+		if !isDuplicate(result, parts[0]) {
+			result = append(result, parts[0])
+		}
+	}
+	return result
+}
+
+// Returns true if 's' is inside result.
+func isDuplicate(result []string, s string) bool {
+	for _, s2 := range result {
+		if s == s2 {
+			return true
+		}
+	}
+	return false
+}
+
+func getLast(protos []*dpb.FileDescriptorProto) *dpb.FileDescriptorProto {
+	return protos[len(protos)-1]
+}
+
 // A map for this: https://developers.google.com/protocol-buffers/docs/proto3#scalar
 func getProtobufTypes() map[string]dpb.FieldDescriptorProto_Type {
 	typeMapping := make(map[string]dpb.FieldDescriptorProto_Type)
@@ -516,5 +640,3 @@ func getOpenAPIScalarTypes() map[string]bool {
 		"boolean": true,
 	}
 }
-
-//TODO: Check out test cases with resolve ref inside gnostic
