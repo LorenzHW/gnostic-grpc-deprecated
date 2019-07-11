@@ -1,8 +1,6 @@
 package generator
 
 import (
-	"github.com/golang/protobuf/proto"
-	openapiv3 "github.com/googleapis/gnostic/OpenAPIv3"
 	surface "github.com/googleapis/gnostic/surface"
 	"io/ioutil"
 	"os"
@@ -102,7 +100,7 @@ func buildSurfaceModel(input string) *surface.Model {
 	cmd := exec.Command("gnostic", "--pb-out=-", input)
 	b, _ := cmd.Output()
 	documentv3, _ := createOpenAPIdocFromGnosticOutput(b)
-	surfaceModel, _ := surface.NewModelFromOpenAPI3(documentv3)
+	surfaceModel, _ := surface.NewModelFromOpenAPI3(documentv3, input)
 	return surfaceModel
 }
 
@@ -131,18 +129,6 @@ func checkContents(t *testing.T, actualContents string, goldenFileName string) {
 	if goldstandard != actualContents {
 		t.Errorf("File contents does not match.")
 	}
-}
-
-func createOpenAPIdocFromGnosticOutput(binaryInput []byte) (*openapiv3.Document, error) {
-	document := &openapiv3.Document{}
-	err := proto.Unmarshal(binaryInput, document)
-	if err != nil {
-		// If we execute gnostic with argument: '-pb-out=-' we get an EOF
-		if err.Error() != "unexpected EOF" {
-			return nil, err
-		}
-	}
-	return document, nil
 }
 
 func handleError(err error, t *testing.T) {
