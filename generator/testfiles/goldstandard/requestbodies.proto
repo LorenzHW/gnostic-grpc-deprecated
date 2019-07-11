@@ -1,10 +1,12 @@
 syntax = "proto3";
 
-package testPackage;
+package requestbodies;
 
 import "google/api/annotations.proto";
 
 import "google/protobuf/empty.proto";
+
+import "google/protobuf/descriptor.proto";
 
 import "google/protobuf/any.proto";
 
@@ -30,7 +32,7 @@ message TestRequestBodyReferenceParameters {
   RequestBody requestbody = 1;
 }
 
-service TestPackage {
+service Requestbodies {
   rpc TestRequestBody ( TestRequestBodyParameters ) returns ( google.protobuf.Empty ) {
     option (google.api.http) = { get:"/testRequestBody" body:"person"  };
   }

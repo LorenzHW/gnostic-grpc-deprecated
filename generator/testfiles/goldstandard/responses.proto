@@ -1,10 +1,12 @@
 syntax = "proto3";
 
-package testPackage;
+package responses;
 
 import "google/api/annotations.proto";
 
 import "google/protobuf/empty.proto";
+
+import "google/protobuf/descriptor.proto";
 
 import "google/protobuf/any.proto";
 
@@ -48,7 +50,7 @@ message TestResponseComponentReferenceResponses {
   Response ok = 1;
 }
 
-service TestPackage {
+service Responses {
   rpc TestResponseNative ( google.protobuf.Empty ) returns ( TestResponseNativeResponses ) {
     option (google.api.http) = { get:"/testResponseNative"  };
   }

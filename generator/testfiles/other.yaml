@@ -11,14 +11,14 @@ info:
     /testRequestBody* --> To test everything related to request bodies
     others            --> Other stuff
 paths:
-  #  /testExternalReference: TODO: Does not work yet
-  #    get:
-  #      operationId: testExternalReference
-  #      parameters:
-  #        - $ref: https://raw.githubusercontent.com/LorenzHW/gnostic-protoc-generator/master/generator/testfiles/parameters/test.yaml#/components/parameters/Parameter2
-  #      responses:
-  #        200:
-  #          description: success
+  /testExternalReference:
+    get:
+      operationId: testExternalReference
+      parameters: #TODO: Currently this gets rendered as body cuz surface model sets POSITON_BODY on default
+        - $ref: https://raw.githubusercontent.com/LorenzHW/gnostic-protoc-generator/master/generator/testfiles/parameters.yaml#/components/parameters/Parameter2
+      responses:
+        200:
+          $ref: https://raw.githubusercontent.com/LorenzHW/gnostic-grpc/master/generator/testfiles/responses.yaml#/components/responses/Response
   /testAdditionalProperties:
     get:
       operationId: testAdditionalProperties
