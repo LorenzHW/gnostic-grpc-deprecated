@@ -478,23 +478,23 @@ func RegisterBookstoreHandlerClient(ctx context.Context, mux *runtime.ServeMux, 
 }
 
 var (
-	pattern_Bookstore_ListShelves_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"shelves"}, ""))
+	pattern_Bookstore_ListShelves_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"shelves"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_Bookstore_CreateShelf_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"shelves"}, ""))
+	pattern_Bookstore_CreateShelf_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"shelves"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_Bookstore_DeleteShelves_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"shelves"}, ""))
+	pattern_Bookstore_DeleteShelves_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"shelves"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_Bookstore_GetShelf_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"shelves", "shelf"}, ""))
+	pattern_Bookstore_GetShelf_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"shelves", "shelf"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_Bookstore_DeleteShelf_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"shelves", "shelf"}, ""))
+	pattern_Bookstore_DeleteShelf_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"shelves", "shelf"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_Bookstore_ListBooks_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"shelves", "shelf", "books"}, ""))
+	pattern_Bookstore_ListBooks_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"shelves", "shelf", "books"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_Bookstore_CreateBook_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"shelves", "shelf", "books"}, ""))
+	pattern_Bookstore_CreateBook_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"shelves", "shelf", "books"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_Bookstore_GetBook_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"shelves", "shelf", "books", "book"}, ""))
+	pattern_Bookstore_GetBook_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"shelves", "shelf", "books", "book"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_Bookstore_DeleteBook_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"shelves", "shelf", "books", "book"}, ""))
+	pattern_Bookstore_DeleteBook_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"shelves", "shelf", "books", "book"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (

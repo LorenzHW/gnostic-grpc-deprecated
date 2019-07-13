@@ -55,7 +55,6 @@ func (s *server) CreateShelf(ctx context.Context, parameters *CreateShelfParamet
 	shelf := parameters.Shelf
 	s.LastShelfID++
 	sid := s.LastShelfID
-	//shelf.Name = fmt.Sprintf("shelves/%d", sid)
 	s.Shelves[sid] = shelf
 
 	responses := &CreateShelfResponses{
@@ -125,7 +124,7 @@ func (s *server) CreateBook(ctx context.Context, parameters *CreateBookParameter
 	s.Mutex.Lock()
 	defer s.Mutex.Unlock()
 	// return "not found" if the shelf doesn't exist
-	shelf, err := s.getShelf(parameters.Shelf)
+	_, err := s.getShelf(parameters.Shelf)
 	responses := &CreateBookResponses{}
 	if err != nil {
 		responses.Default = &Error{Code: int32(http.StatusNotFound), Message: err.Error()}
@@ -135,7 +134,6 @@ func (s *server) CreateBook(ctx context.Context, parameters *CreateBookParameter
 	s.LastBookID++
 	bid := s.LastBookID
 	book := parameters.Book
-	book.Name = fmt.Sprintf("%s/books/%d", shelf.Name, bid)
 	if s.Books[parameters.Shelf] == nil {
 		s.Books[parameters.Shelf] = make(map[int64]*Book)
 	}
