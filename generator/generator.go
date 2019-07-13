@@ -19,7 +19,6 @@ import (
 	"github.com/golang/protobuf/descriptor"
 	"github.com/golang/protobuf/proto"
 	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
 	surface_v1 "github.com/googleapis/gnostic/surface"
 	"google.golang.org/genproto/googleapis/api/annotations"
@@ -65,7 +64,7 @@ func (renderer *Renderer) RunFileDescriptorSetGenerator() (fdSet *dpb.FileDescri
 
 // Protoreflect needs all the dependencies that are used inside of the FileDescriptorProto (that gets rendered)
 // to work properly. Those dependencies are google/protobuf/empty.proto, google/api/annotations.proto,
-// "google/protobuf/descriptor.proto" and "google/protobuf/any". For all those dependencies the corresponding
+// and "google/protobuf/descriptor.proto". For all those dependencies the corresponding
 // FileDescriptorProto has to be added to the FileDescriptorSet. Protoreflect won't work
 // if a reference is missing.
 func buildDependencies(fdSet *dpb.FileDescriptorSet) {
@@ -101,19 +100,17 @@ func buildDependencies(fdSet *dpb.FileDescriptorSet) {
 	// Build other required dependencies
 	e := empty.Empty{}
 	fdp := dpb.FieldDescriptorProto{}
-	a := any.Any{}
 	fd2, _ := descriptor.ForMessage(&e)
 	fd3, _ := descriptor.ForMessage(&fdp)
-	fd4, _ := descriptor.ForMessage(&a)
 
 	// At last, we need to add the dependencies to the FileDescriptorProto in order to get them rendered.
-	dependencies := []string{"google/api/annotations.proto", "google/protobuf/empty.proto", "google/protobuf/any.proto"}
+	dependencies := []string{"google/api/annotations.proto", "google/protobuf/empty.proto"}
 	lastFdProto := fdSet.File[len(fdSet.File)-1]
 	lastFdProto.Dependency = append(lastFdProto.Dependency, dependencies...)
 
 	// According to the documentation of protoReflect.CreateFileDescriptorFromSet the file I want to print
 	// needs to be at the end of the array. All other FileDescriptorProto are dependencies.
-	fdSet.File = append([]*dpb.FileDescriptorProto{fd2, fd, fd3, fd4}, fdSet.File...)
+	fdSet.File = append([]*dpb.FileDescriptorProto{fd2, fd, fd3}, fdSet.File...)
 }
 
 // Builds protobuf messages from the surface model types. If the type is a RPC request parameter
