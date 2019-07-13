@@ -151,7 +151,12 @@ func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) 
 			setFieldDescriptorType(fieldDescriptor, f)
 			setFieldDescriptorTypeName(fieldDescriptor, f)
 
-			if strings.Contains(f.Type, "map") {
+			// Maps are represented as nested types inside of the descriptor.
+			if strings.Contains(f.Type, "map[string]") {
+				if strings.Contains(f.Type, "map[string][]") {
+					// Not supported for now: https://github.com/LorenzHW/gnostic-grpc/issues/3#issuecomment-509348357
+					continue
+				}
 				mapDescriptorProto := buildMapDescriptorProto(f)
 				fieldDescriptor.TypeName = mapDescriptorProto.Name
 				message.NestedType = append(message.NestedType, mapDescriptorProto)
@@ -453,11 +458,6 @@ func getTypeNameForMapValueType(valueType string) *string {
 	if _, ok := protoBufScalarTypes[valueType]; ok {
 		// Ok it is a scalar. For scalar values we don't set the TypeName of the field.
 		return nil
-	}
-	if strings.Contains(valueType, "[]") {
-		// We got an array as value type. This can't be represented inside .proto. So let's return the 'any' type.
-		anyType := ".google.protobuf.Any"
-		return &anyType
 	}
 	return &valueType
 }

@@ -152,6 +152,17 @@ func (c *GrpcChecker) analyzeSchema(identifier string, schemaOrReference *openap
 			c.messages = append(c.messages, msg)
 		}
 
+		// Check for this: https://github.com/LorenzHW/gnostic-grpc/issues/3#issuecomment-509348357
+		if additionalProperties := schema.AdditionalProperties; additionalProperties != nil {
+			if schema := additionalProperties.GetSchemaOrReference().GetSchema(); schema != nil {
+				if schema.Type == "array" {
+					text := "Field: additionalProperties with type array is generated as empty message inside .proto."
+					msg := constructMessage("SCHEMAFIELDS", text, []string{identifier, "Schema"})
+					c.messages = append(c.messages, msg)
+				}
+			}
+		}
+
 		if items := schema.Items; items != nil {
 			for _, schemaOrRef := range items.SchemaOrReference {
 				c.analyzeSchema("Items of "+identifier, schemaOrRef)

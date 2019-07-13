@@ -148,7 +148,8 @@ func createOpenAPIdocFromGnosticOutput(binaryInput []byte) (*openapiv3.Document,
 func handleError(err error, t *testing.T) {
 	t.Errorf("Error while executing the protoc-generator")
 	if strings.Contains(err.Error(), "included an unresolvable reference") {
-		t.Errorf("This could be due to the fact that a 'typeName' is nil on a FieldDescriptorProto")
+		t.Errorf("This could be due to the fact that 'typeName' is set wrong on a FieldDescriptorProto." +
+			"For every FieldDescriptorProto where the type == 'FieldDescriptorProto_TYPE_MESSAGE' the correct typeName needs to be set.")
 	}
 	t.Errorf(err.Error())
 }

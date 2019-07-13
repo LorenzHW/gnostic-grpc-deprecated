@@ -27,7 +27,6 @@ message TestAdditionalPropertiesReferenceResponses {
 }
 
 message TestAdditionalPropertiesArrayResponses {
-  map<string, google.protobuf.Any> ok = 1;
 }
 
 service TestPackage {

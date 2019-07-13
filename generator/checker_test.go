@@ -63,6 +63,7 @@ func TestFeatureCheckerOther(t *testing.T) {
 		"Fields: Required are not supported for the schema: Person",
 		"Fields: Example are not supported for the schema: name",
 		"Fields: Xml are not supported for the schema: photoUrls",
+		"Field: additionalProperties with type array is generated as empty message inside .proto.",
 	}
 	validateMessages(t, expectedMessageTexts, messages)
 }
@@ -70,6 +71,7 @@ func TestFeatureCheckerOther(t *testing.T) {
 func validateMessages(t *testing.T, expectedMessageTexts []string, messages []*plugins.Message) {
 	if len(expectedMessageTexts) != len(messages) {
 		t.Errorf("Number of messages from GrpcChecker does not match expected number")
+		return
 	}
 	for i, msg := range messages {
 		if msg.Text != expectedMessageTexts[i] {
