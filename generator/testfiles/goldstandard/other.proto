@@ -24,12 +24,12 @@ message Person {
   repeated string photourls = 4;
 }
 
-message TestExternalReferenceParameters {
-  parameters.Parameter2 parameter2 = 1;
-}
-
 message TestExternalReferenceResponses {
   responses.Response ok = 1;
+}
+
+message TestExernalReference2Parameters {
+  parameters.Parameter2 parameter2 = 1;
 }
 
 message TestAdditionalPropertiesResponses {
@@ -45,8 +45,12 @@ message TestAdditionalPropertiesArrayResponses {
 }
 
 service Other {
-  rpc TestExternalReference ( TestExternalReferenceParameters ) returns ( TestExternalReferenceResponses ) {
-    option (google.api.http) = { get:"/testExternalReference" body:"parameter2"  };
+  rpc TestExternalReference ( google.protobuf.Empty ) returns ( TestExternalReferenceResponses ) {
+    option (google.api.http) = { get:"/testExternalReference"  };
+  }
+
+  rpc TestExernalReference2 ( TestExernalReference2Parameters ) returns ( google.protobuf.Empty ) {
+    option (google.api.http) = { get:"/testExternalReference2" body:"parameter2"  };
   }
 
   rpc TestAdditionalProperties ( google.protobuf.Empty ) returns ( TestAdditionalPropertiesResponses ) {

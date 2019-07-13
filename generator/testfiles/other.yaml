@@ -14,11 +14,17 @@ paths:
   /testExternalReference:
     get:
       operationId: testExternalReference
-      parameters: #TODO: Currently this gets rendered as body cuz surface model sets POSITON_BODY on default
-        - $ref: https://raw.githubusercontent.com/LorenzHW/gnostic-protoc-generator/master/generator/testfiles/parameters.yaml#/components/parameters/Parameter2
       responses:
         200:
           $ref: https://raw.githubusercontent.com/LorenzHW/gnostic-grpc/master/generator/testfiles/responses.yaml#/components/responses/Response
+  /testExternalReference2:
+    get:
+      operationId: testExernalReference2
+      parameters: #TODO: This gets rendered as body parameter, cuz of default position: POSITION_BODY
+        - $ref: https://raw.githubusercontent.com/LorenzHW/gnostic-protoc-generator/master/generator/testfiles/parameters.yaml#/components/parameters/Parameter2
+      responses:
+        200:
+          description: success
   /testAdditionalProperties:
     get:
       operationId: testAdditionalProperties

@@ -16,7 +16,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: '#/components/parameters/ComponentExampleParameter'
+              $ref: '#/components/schemas/ComponentsExampleSchema'
       responses:
         200:
           description: success

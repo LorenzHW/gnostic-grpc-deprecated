@@ -15,7 +15,7 @@ const (
 	// When false, test behaves normally, checking output against golden test files.
 	// But when changed to true, running test will actually re-generate golden test
 	// files (which assumes output is correct).
-	regenerateMode = true
+	regenerateMode = false
 
 	testFilesDirectory = "testfiles"
 )
@@ -40,8 +40,7 @@ func TestFileDescriptorGeneratorParameters(t *testing.T) {
 		protoData, err = runGeneratorWithoutEnvironment(errorInput, "parameters")
 		if _, ok := errorMessages[err.Error()]; !ok {
 			// If we don't get an error from the generator the test fails!
-			t.Errorf("Error while executing the descriptor generator")
-			t.Errorf(err.Error())
+			handleError(err, t)
 		}
 	}
 
@@ -70,6 +69,8 @@ func TestFileDescriptorGeneratorResponses(t *testing.T) {
 }
 
 func TestFileDescriptorGeneratorOther(t *testing.T) {
+	// It could happen that this tests fails, because the imports get rendered in a different order.
+	// Just execute it again.
 	input := "testfiles/other.yaml"
 
 	protoData, err := runGeneratorWithoutEnvironment(input, "other")
@@ -80,7 +81,10 @@ func TestFileDescriptorGeneratorOther(t *testing.T) {
 }
 
 func runGeneratorWithoutEnvironment(input string, packageName string) ([]byte, error) {
-	surfaceModel := buildSurfaceModel(input)
+	surfaceModel, err := buildSurfaceModel(input)
+	if err != nil {
+		return nil, err
+	}
 	r := NewRenderer(surfaceModel)
 	r.Package = packageName
 
@@ -96,12 +100,12 @@ func runGeneratorWithoutEnvironment(input string, packageName string) ([]byte, e
 	return f.Data, err
 }
 
-func buildSurfaceModel(input string) *surface.Model {
+func buildSurfaceModel(input string) (*surface.Model, error) {
 	cmd := exec.Command("gnostic", "--pb-out=-", input)
 	b, _ := cmd.Output()
 	documentv3, _ := createOpenAPIDocFromGnosticOutput(b)
-	surfaceModel, _ := surface.NewModelFromOpenAPI3(documentv3, input)
-	return surfaceModel
+	surfaceModel, err := surface.NewModelFromOpenAPI3(documentv3, input)
+	return surfaceModel, err
 }
 
 func writeFile(output string, protoData []byte) {
