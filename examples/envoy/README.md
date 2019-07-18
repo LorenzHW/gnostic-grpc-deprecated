@@ -15,7 +15,8 @@ In order for this tutorial to work you should work inside this directory under `
 #### 1. Step
 Given `bookstore.proto` generate the descriptor set.
     
-    protoc --proto_path=${ANNOTATIONS} --proto_path=. --include_imports --include_source_info --descriptor_set_out=envoy-proxy/proto.pb bookstore.proto
+    protoc --proto_path=${ANNOTATIONS} --proto_path=. --include_imports --include_source_info \
+    --descriptor_set_out=envoy-proxy/proto.pb bookstore.proto
     
 This generates `envoy-proxy/proto.pb`.
 
