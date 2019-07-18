@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/LorenzHW/gnostic-protoc-generator/generator"
+	"github.com/LorenzHW/gnostic-grpc/generator"
 )
 
 func main() {
