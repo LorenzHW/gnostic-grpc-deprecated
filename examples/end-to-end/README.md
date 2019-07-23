@@ -25,12 +25,12 @@ This tutorial has six steps:
 6. Test your API with with curl and a gRPC client.
 
 #### Prerequisite
-Install [gnostic](https://github.com/googleapis/gnostic), [gnostic-grpc](https://github.com/LorenzHW/gnostic-grpc),
+Install [gnostic](https://github.com/googleapis/gnostic), [gnostic-grpc](https://github.com/googleapis/gnostic-grpc),
 [go plugin for protoc](https://github.com/golang/protobuf/protoc-gen-go), [gRPC gateway plugin](https://github.com/grpc-ecosystem/grpc-gateway)
 and [gRPC](https://grpc.io/)
 
     go get -u github.com/googleapis/gnostic
-    go get -u github.com/LorenzHW/gnostic-grpc
+    go get -u github.com/googleapis/gnostic-grpc
     go get -u github.com/golang/protobuf/protoc-gen-go
     go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
     go get -u google.golang.org/grpc
