@@ -1,3 +1,17 @@
+// Copyright 2019 Google Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package bookstore
 
 import (
@@ -55,7 +69,6 @@ func (s *server) CreateShelf(ctx context.Context, parameters *CreateShelfParamet
 	shelf := parameters.Shelf
 	s.LastShelfID++
 	sid := s.LastShelfID
-	//shelf.Name = fmt.Sprintf("shelves/%d", sid)
 	s.Shelves[sid] = shelf
 
 	responses := &CreateShelfResponses{
@@ -125,7 +138,7 @@ func (s *server) CreateBook(ctx context.Context, parameters *CreateBookParameter
 	s.Mutex.Lock()
 	defer s.Mutex.Unlock()
 	// return "not found" if the shelf doesn't exist
-	shelf, err := s.getShelf(parameters.Shelf)
+	_, err := s.getShelf(parameters.Shelf)
 	responses := &CreateBookResponses{}
 	if err != nil {
 		responses.Default = &Error{Code: int32(http.StatusNotFound), Message: err.Error()}
@@ -135,7 +148,6 @@ func (s *server) CreateBook(ctx context.Context, parameters *CreateBookParameter
 	s.LastBookID++
 	bid := s.LastBookID
 	book := parameters.Book
-	book.Name = fmt.Sprintf("%s/books/%d", shelf.Name, bid)
 	if s.Books[parameters.Shelf] == nil {
 		s.Books[parameters.Shelf] = make(map[int64]*Book)
 	}

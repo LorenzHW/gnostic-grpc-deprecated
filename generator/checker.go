@@ -1,3 +1,17 @@
+// Copyright 2019 Google Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package generator
 
 import (
@@ -150,6 +164,17 @@ func (c *GrpcChecker) analyzeSchema(identifier string, schemaOrReference *openap
 			text := "Field: Enum is not generated as enum in .proto for schema: " + identifier
 			msg := constructMessage("SCHEMAFIELDS", text, []string{identifier, "Schema"})
 			c.messages = append(c.messages, msg)
+		}
+
+		// Check for this: https://github.com/LorenzHW/gnostic-grpc/issues/3#issuecomment-509348357
+		if additionalProperties := schema.AdditionalProperties; additionalProperties != nil {
+			if schema := additionalProperties.GetSchemaOrReference().GetSchema(); schema != nil {
+				if schema.Type == "array" {
+					text := "Field: additionalProperties with type array is generated as empty message inside .proto."
+					msg := constructMessage("SCHEMAFIELDS", text, []string{identifier, "Schema"})
+					c.messages = append(c.messages, msg)
+				}
+			}
 		}
 
 		if items := schema.Items; items != nil {

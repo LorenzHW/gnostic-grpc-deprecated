@@ -1,3 +1,17 @@
+// Copyright 2019 Google Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package generator
 
 import (
@@ -63,6 +77,7 @@ func TestFeatureCheckerOther(t *testing.T) {
 		"Fields: Required are not supported for the schema: Person",
 		"Fields: Example are not supported for the schema: name",
 		"Fields: Xml are not supported for the schema: photoUrls",
+		"Field: additionalProperties with type array is generated as empty message inside .proto.",
 	}
 	validateMessages(t, expectedMessageTexts, messages)
 }
@@ -70,6 +85,7 @@ func TestFeatureCheckerOther(t *testing.T) {
 func validateMessages(t *testing.T, expectedMessageTexts []string, messages []*plugins.Message) {
 	if len(expectedMessageTexts) != len(messages) {
 		t.Errorf("Number of messages from GrpcChecker does not match expected number")
+		return
 	}
 	for i, msg := range messages {
 		if msg.Text != expectedMessageTexts[i] {

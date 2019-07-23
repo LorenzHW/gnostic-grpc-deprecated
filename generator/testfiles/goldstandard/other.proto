@@ -12,8 +12,6 @@ import "google/protobuf/empty.proto";
 
 import "google/protobuf/descriptor.proto";
 
-import "google/protobuf/any.proto";
-
 message Person {
   int64 id = 1;
 
@@ -41,7 +39,6 @@ message TestAdditionalPropertiesReferenceResponses {
 }
 
 message TestAdditionalPropertiesArrayResponses {
-  map<string, google.protobuf.Any> ok = 1;
 }
 
 service Other {

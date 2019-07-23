@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2019 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import (
 	"github.com/golang/protobuf/descriptor"
 	"github.com/golang/protobuf/proto"
 	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/empty"
 	openapiv3 "github.com/googleapis/gnostic/OpenAPIv3"
 	surface_v1 "github.com/googleapis/gnostic/surface"
@@ -145,7 +144,7 @@ func buildExternalDependencies(fdSet *dpb.FileDescriptorSet, renderer *Renderer)
 
 // Protoreflect needs all the dependencies that are used inside of the FileDescriptorProto (that gets rendered)
 // to work properly. Those dependencies are google/protobuf/empty.proto, google/api/annotations.proto,
-// "google/protobuf/descriptor.proto" and "google/protobuf/any". For all those dependencies the corresponding
+// and "google/protobuf/descriptor.proto". For all those dependencies the corresponding
 // FileDescriptorProto has to be added to the FileDescriptorSet. Protoreflect won't work
 // if a reference is missing.
 func buildDependencies(fdSet *dpb.FileDescriptorSet) {
@@ -181,11 +180,9 @@ func buildDependencies(fdSet *dpb.FileDescriptorSet) {
 	// Build other required dependencies
 	e := empty.Empty{}
 	fdp := dpb.DescriptorProto{}
-	a := any.Any{}
 	fd2, _ := descriptor.ForMessage(&e)
 	fd3, _ := descriptor.ForMessage(&fdp)
-	fd4, _ := descriptor.ForMessage(&a)
-	dependencies := []*dpb.FileDescriptorProto{fd, fd2, fd3, fd4}
+	dependencies := []*dpb.FileDescriptorProto{fd, fd2, fd3}
 
 	// According to the documentation of protoReflect.CreateFileDescriptorFromSet the file I want to print
 	// needs to be at the end of the array. All other FileDescriptorProto are dependencies.
@@ -227,7 +224,12 @@ func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) 
 			setFieldDescriptorType(fieldDescriptor, f)
 			setFieldDescriptorTypeName(fieldDescriptor, f, renderer.Package)
 
-			if strings.Contains(f.Type, "map") {
+			// Maps are represented as nested types inside of the descriptor.
+			if strings.Contains(f.Type, "map[string]") {
+				if strings.Contains(f.Type, "map[string][]") {
+					// Not supported for now: https://github.com/LorenzHW/gnostic-grpc/issues/3#issuecomment-509348357
+					continue
+				}
 				mapDescriptorProto := buildMapDescriptorProto(f)
 				fieldDescriptor.TypeName = mapDescriptorProto.Name
 				message.NestedType = append(message.NestedType, mapDescriptorProto)
@@ -252,9 +254,6 @@ func buildServiceFromMethods(descr *dpb.FileDescriptorProto, renderer *Renderer)
 	descr.Service = []*dpb.ServiceDescriptorProto{service}
 
 	for _, method := range methods {
-		// TODO: ClientStreaming
-		// TODO: ServerStreaming
-
 		mOptionsDescr := &dpb.MethodOptions{}
 		requestBody := getRequestBodyForRequestParameters(method.ParametersTypeName, renderer.Model.Types)
 		httpRule := getHttpRuleForMethod(method, requestBody)
@@ -537,11 +536,6 @@ func getTypeNameForMapValueType(valueType string) *string {
 	if _, ok := protoBufScalarTypes[valueType]; ok {
 		// Ok it is a scalar. For scalar values we don't set the TypeName of the field.
 		return nil
-	}
-	if strings.Contains(valueType, "[]") {
-		// We got an array as value type. This can't be represented inside .proto. So let's return the 'any' type.
-		anyType := ".google.protobuf.Any"
-		return &anyType
 	}
 	return &valueType
 }
