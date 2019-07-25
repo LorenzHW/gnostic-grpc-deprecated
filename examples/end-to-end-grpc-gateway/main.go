@@ -15,9 +15,11 @@
 package main
 
 import (
-	"github.com/googleapis/gnostic-grpc/examples/end-to-end/bookstore"
+	"github.com/googleapis/gnostic-grpc/examples/end-to-end-grpc-gateway/bookstore"
 )
 
 func main() {
-	bookstore.RunServer()
+	// Run server inside goroutine so we don't block the main thread.
+	go bookstore.RunServer()
+	bookstore.RunProxy()
 }
