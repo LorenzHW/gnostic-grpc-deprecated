@@ -18,15 +18,15 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/googleapis/gnostic-grpc/examples/end-to-end/bookstore"
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/googleapis/gnostic-grpc/examples/end-to-end/bookstore"
 	"google.golang.org/grpc"
 	"log"
 	"time"
 )
 
 var (
-	serverAddr = flag.String("server_addr", "127.0.0.1:50051", "The server address in the format of host:port")
+	serverAddr = flag.String("server_addr", "127.0.0.1:51051", "The server address in the format of host:port")
 )
 
 func main() {
