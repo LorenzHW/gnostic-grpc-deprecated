@@ -4,6 +4,13 @@ info:
   version: "1.0.0"
   description: |
     A cyclic dependency between other.yaml <--> cyclic_dependency.yaml
+paths:
+  /someMethod: # Needed, otherwise gnostic gives error
+    get:
+      operationId: someMethod
+      responses:
+        200:
+          description: success
 components:
   responses:
     Response:
