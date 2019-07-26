@@ -92,6 +92,19 @@ func TestFileDescriptorGeneratorOther(t *testing.T) {
 		handleError(err, t)
 	}
 	checkContents(t, string(protoData), "goldstandard/other.proto")
+
+	erroneousInput := []string{"testfiles/errors/cyclic_dependency_1.yaml"}
+
+	for _, errorInput := range erroneousInput {
+		errorMessages := map[string]bool{
+			"cycle in imports: cyclic_dependency_2.proto -> cyclic_dependency_1.proto -> cyclic_dependency_2.proto": true,
+		}
+		protoData, err = runGeneratorWithoutEnvironment(errorInput, "cyclic_dependency_1")
+		if _, ok := errorMessages[err.Error()]; !ok {
+			// If we don't get an error from the generator the test fails!
+			handleError(err, t)
+		}
+	}
 }
 
 func runGeneratorWithoutEnvironment(input string, packageName string) ([]byte, error) {

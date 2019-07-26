@@ -25,12 +25,6 @@ paths:
       responses:
         200:
           description: success
-  /testCyclicDependency:
-    get:
-      operationId: testCyclicDependency
-      responses:
-        200:
-          $ref: https://raw.githubusercontent.com/LorenzHW/gnostic-grpc/master/generator/testfiles/cyclic_dependency.yaml#/components/responses/Response
   /testAdditionalProperties:
     get:
       operationId: testAdditionalProperties
