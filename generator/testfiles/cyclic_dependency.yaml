@@ -1,0 +1,14 @@
+openapi: 3.0.0
+info:
+  title: Test API for GSoC project
+  version: "1.0.0"
+  description: |
+    A cyclic dependency between other.yaml <--> cyclic_dependency.yaml
+components:
+  responses:
+    Response:
+      description: success
+      content:
+        application/json:
+          schema:
+            $ref: 'https://raw.githubusercontent.com/LorenzHW/gnostic-grpc/master/generator/testfiles/other.yaml#/components/schemas/Person'
