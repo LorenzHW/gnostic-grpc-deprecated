@@ -33,17 +33,19 @@ var protoBufScalarTypes = getProtobufTypes()
 var openAPITypesToProtoBuf = getOpenAPITypesToProtoBufTypes()
 var openAPIScalarTypes = getOpenAPIScalarTypes()
 
-// Gathers all external dependencies we generated in recursive calls.
-var generatedDependencies = make(map[string]bool, 0)
+// Gathers all symbolic references we generated in recursive calls.
+var generatedSymbolicReferences = make(map[string]bool, 0)
 
-// Gathers all messages that have been generated from external dependencies in recursive calls.
+// Gathers all messages that have been generated from symbolic references in recursive calls.
 var generatedMessages = make(map[string]string, 0)
 
 // Uses the output of gnostic to return a dpb.FileDescriptorSet (in bytes). 'renderer' contains
 // the 'model' (surface model) which has all the relevant data to create the dpb.FileDescriptorSet.
 // There are four main steps:
 // 		1. buildDependencies to build all static FileDescriptorProto we need.
-// 		2. buildExternalDependencies recursively executes this plugin to generate all FileDescriptorSet based on external dependencies.
+// 		2. buildSymbolicReferences 	recursively executes this plugin to generate all FileDescriptorSet based on symbolic
+// 									references. A symbolic reference is an URL to another OpenAPI description inside of
+//									current description.
 //		2. buildMessagesFromTypes is called to create all messages which will be rendered in .proto
 //		3. buildServiceFromMethods is called to create a RPC service which will be rendered in .proto
 func (renderer *Renderer) runFileDescriptorSetGenerator() (fdSet *dpb.FileDescriptorSet, err error) {
@@ -61,7 +63,7 @@ func (renderer *Renderer) runFileDescriptorSetGenerator() (fdSet *dpb.FileDescri
 	}
 
 	buildDependencies(fdSet)
-	err = buildExternalDependencies(fdSet, renderer)
+	err = buildSymbolicReferences(fdSet, renderer)
 	if err != nil {
 		return nil, err
 	}
@@ -93,19 +95,19 @@ func addDependencies(fdSet *dpb.FileDescriptorSet) {
 	}
 }
 
-// buildExternalDependencies recursively generates all .proto definitions to external OpenAPI descriptions (URLs to other
-// descriptions inside the description).
-func buildExternalDependencies(fdSet *dpb.FileDescriptorSet, renderer *Renderer) (err error) {
-	externalDependencies := renderer.Model.Dependencies
-	externalDependencies = trimAndRemoveDuplicates(externalDependencies)
+// buildSymbolicReferences recursively generates all .proto definitions to external OpenAPI descriptions (URLs to other
+// descriptions inside the current description).
+func buildSymbolicReferences(fdSet *dpb.FileDescriptorSet, renderer *Renderer) (err error) {
+	symbolicReferences := renderer.Model.SymbolicReferences
+	symbolicReferences = trimAndRemoveDuplicates(symbolicReferences)
 
-	externalFileDescriptorProtos := make([]*dpb.FileDescriptorProto, 0)
-	for _, dep := range externalDependencies {
-		if _, alreadyGenerated := generatedDependencies[dep]; !alreadyGenerated {
-			generatedDependencies[dep] = true
+	symbolicFileDescriptorProtos := make([]*dpb.FileDescriptorProto, 0)
+	for _, ref := range symbolicReferences {
+		if _, alreadyGenerated := generatedSymbolicReferences[ref]; !alreadyGenerated {
+			generatedSymbolicReferences[ref] = true
 
-			// Lets get the standard gnostic output from the external dependency.
-			cmd := exec.Command("gnostic", "--pb-out=-", dep)
+			// Lets get the standard gnostic output from the symbolic reference.
+			cmd := exec.Command("gnostic", "--pb-out=-", ref)
 			b, err := cmd.Output()
 			if err != nil {
 				return err
@@ -117,28 +119,28 @@ func buildExternalDependencies(fdSet *dpb.FileDescriptorSet, renderer *Renderer)
 				return err
 			}
 
-			// Create the surface model. Keep in mind that this resolves the dependencies of the external dep again!
-			surfaceModel, err := surface_v1.NewModelFromOpenAPI3(document, dep)
+			// Create the surface model. Keep in mind that this resolves the references of the symbolic reference again!
+			surfaceModel, err := surface_v1.NewModelFromOpenAPI3(document, ref)
 			if err != nil {
 				return err
 			}
 
 			// Recursively call the generator.
 			recursiveRenderer := NewRenderer(surfaceModel)
-			fileName := path.Base(dep)
+			fileName := path.Base(ref)
 			recursiveRenderer.Package = strings.TrimSuffix(fileName, filepath.Ext(fileName))
 			newFdSet, err := recursiveRenderer.runFileDescriptorSetGenerator()
 			if err != nil {
 				return err
 			}
-			renderer.ExternalFdSets = append(renderer.ExternalFdSets, newFdSet)
+			renderer.SymbolicFdSets = append(renderer.SymbolicFdSets, newFdSet)
 
-			dependencyProto := getLast(newFdSet.File)
-			externalFileDescriptorProtos = append(externalFileDescriptorProtos, dependencyProto)
+			symbolicProto := getLast(newFdSet.File)
+			symbolicFileDescriptorProtos = append(symbolicFileDescriptorProtos, symbolicProto)
 		}
 	}
 
-	fdSet.File = append(externalFileDescriptorProtos, fdSet.File...)
+	fdSet.File = append(symbolicFileDescriptorProtos, fdSet.File...)
 	return nil
 }
 
@@ -261,6 +263,8 @@ func buildServiceFromMethods(descr *dpb.FileDescriptorProto, renderer *Renderer)
 			return err
 		}
 
+		method.ParametersTypeName = strings.Title(method.ParametersTypeName)
+		method.ResponsesTypeName = strings.Title(method.ResponsesTypeName)
 		if method.ParametersTypeName == "" {
 			method.ParametersTypeName = "google.protobuf.Empty"
 		}
@@ -563,12 +567,11 @@ func createOpenAPIDocFromGnosticOutput(binaryInput []byte) (*openapiv3.Document,
 	return document, nil
 }
 
-// 'externalDependencies' is a list of URLs to other OpenAPI descriptions. We need
-// the base of all URLs and no duplicates.
-func trimAndRemoveDuplicates(externalDependencies []string) []string {
+// 'url' is a list of URLs to other OpenAPI descriptions. We need the base of all URLs and no duplicates.
+func trimAndRemoveDuplicates(urls []string) []string {
 	result := make([]string, 0)
-	for _, dep := range externalDependencies {
-		parts := strings.Split(dep, "#")
+	for _, url := range urls {
+		parts := strings.Split(url, "#")
 		if !isDuplicate(result, parts[0]) {
 			result = append(result, parts[0])
 		}
@@ -576,9 +579,9 @@ func trimAndRemoveDuplicates(externalDependencies []string) []string {
 	return result
 }
 
-// Returns true if 's' is inside result.
-func isDuplicate(result []string, s string) bool {
-	for _, s2 := range result {
+// Returns true if 's' is inside 'ss'.
+func isDuplicate(ss []string, s string) bool {
+	for _, s2 := range ss {
 		if s == s2 {
 			return true
 		}

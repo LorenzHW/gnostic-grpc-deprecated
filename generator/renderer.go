@@ -30,7 +30,7 @@ type Renderer struct {
 	Model *surface.Model
 	// The FileDescriptorSet that will be printed with protoreflect
 	FdSet          *dpb.FileDescriptorSet
-	ExternalFdSets []*dpb.FileDescriptorSet
+	SymbolicFdSets []*dpb.FileDescriptorSet
 	Package        string // package name
 }
 
@@ -38,7 +38,7 @@ type Renderer struct {
 func NewRenderer(model *surface.Model) (renderer *Renderer) {
 	renderer = &Renderer{}
 	renderer.Model = model
-	renderer.ExternalFdSets = make([]*dpb.FileDescriptorSet, 0)
+	renderer.SymbolicFdSets = make([]*dpb.FileDescriptorSet, 0)
 	return renderer
 }
 
@@ -66,7 +66,7 @@ func (renderer *Renderer) Render(response *plugins.Response, fileName string) (e
 	response.Files = append(response.Files, f)
 
 	// Render external proto definitions.
-	for _, externalSet := range renderer.ExternalFdSets {
+	for _, externalSet := range renderer.SymbolicFdSets {
 		f, err = renderer.RenderProto(externalSet, *getLast(externalSet.File).Name)
 		if err != nil {
 			return err
