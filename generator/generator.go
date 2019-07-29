@@ -15,13 +15,15 @@
 package generator
 
 import (
-	"errors"
 	"github.com/golang/protobuf/descriptor"
 	"github.com/golang/protobuf/proto"
 	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/golang/protobuf/ptypes/empty"
 	surface_v1 "github.com/googleapis/gnostic/surface"
 	"google.golang.org/genproto/googleapis/api/annotations"
+	"log"
+	nethttp "net/http"
+	"strconv"
 	"strings"
 )
 
@@ -119,26 +121,22 @@ func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) 
 	types := renderer.Model.Types
 
 	for _, t := range types {
-		messageName := strings.Title(t.Name)
-
-		message := dpb.DescriptorProto{
-			Name: &messageName,
-		}
+		message := &dpb.DescriptorProto{}
+		setMessageDescriptorName(message, t.Name)
 
 		for i, f := range t.Fields {
+			if f.Type == "todo" {
+				log.Printf("unimplemented: %v", f)
+				continue
+			}
+
 			if isRequestParameter(t) {
 				if f.Position == surface_v1.Position_PATH {
-					f, err = validatePathParameter(f, types)
-					if err != nil {
-						return err
-					}
+					validatePathParameter(f)
 				}
 
 				if f.Position == surface_v1.Position_QUERY {
-					f, err = validateQueryParameter(f)
-					if err != nil {
-						return err
-					}
+					validateQueryParameter(f)
 				}
 			}
 			ctr := int32(i + 1)
@@ -149,7 +147,7 @@ func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) 
 			setFieldDescriptorTypeName(fieldDescriptor, f)
 
 			// Maps are represented as nested types inside of the descriptor.
-			if strings.Contains(f.Type, "map[string]") {
+			if f.Kind == surface_v1.FieldKind_MAP {
 				if strings.Contains(f.Type, "map[string][]") {
 					// Not supported for now: https://github.com/LorenzHW/gnostic-grpc/issues/3#issuecomment-509348357
 					continue
@@ -160,9 +158,26 @@ func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) 
 			}
 			message.Field = append(message.Field, fieldDescriptor)
 		}
-		descr.MessageType = append(descr.MessageType, &message)
+		descr.MessageType = append(descr.MessageType, message)
 	}
 	return nil
+}
+
+func setMessageDescriptorName(messageDescriptorProto *dpb.DescriptorProto, name string) {
+	name = cleanName(name)
+	name = strings.Title(name)
+	messageDescriptorProto.Name = &name
+}
+
+func cleanName(name string) string {
+	name = convertStatusCodes(name)
+	name = strings.Replace(name, "-", "", -1)
+	name = strings.Replace(name, " ", "", -1)
+	name = strings.Replace(name, "(", "", -1)
+	name = strings.Replace(name, ")", "", -1)
+	name = strings.Replace(name, "{", "", -1)
+	name = strings.Replace(name, "}", "", -1)
+	return name
 }
 
 // Builds a protobuf RPC service. For every method the corresponding gRPC-HTTP transcoding options (https://github.com/googleapis/googleapis/blob/master/google/api/http.proto)
@@ -186,6 +201,11 @@ func buildServiceFromMethods(descr *dpb.FileDescriptorProto, renderer *Renderer)
 		if err := proto.SetExtension(mOptionsDescr, annotations.E_Http, &httpRule); err != nil {
 			return err
 		}
+
+		method.ParametersTypeName = cleanName(method.ParametersTypeName)
+		method.ResponsesTypeName = cleanName(method.ResponsesTypeName)
+		method.ParametersTypeName = strings.Title(method.ParametersTypeName)
+		method.ResponsesTypeName = strings.Title(method.ResponsesTypeName)
 
 		if method.ParametersTypeName == "" {
 			method.ParametersTypeName = "google.protobuf.Empty"
@@ -245,62 +265,28 @@ func buildKeyValueFields(field *surface_v1.Field) []*dpb.FieldDescriptorProto {
 }
 
 // Validates if the path parameter has the requested structure.
-// This is necessary according to: https://github.com/googleapis/googleapis/blob/a8ee1416f4c588f2ab92da72e7c1f588c784d3e6/google/api/http.proto#L62
-func validatePathParameter(field *surface_v1.Field, types []*surface_v1.Type) (*surface_v1.Field, error) {
-
+// This is necessary according to: https://github.com/googleapis/googleapis/blob/master/google/api/http.proto#L62
+func validatePathParameter(field *surface_v1.Field) {
 	if field.Kind != surface_v1.FieldKind_SCALAR {
-		if field.Kind == surface_v1.FieldKind_REFERENCE {
-			// We got a reference. Let's try to flatten!
-			field, err := flattenPathParameter(field, types)
-			if err == nil {
-				return field, nil
-			}
-		}
-		return nil, errors.New("The path parameter with the Name " + field.Name + " is invalid. " +
+		log.Println("The path parameter with the Name " + field.Name + " is invalid. " +
 			"The path template may refer to one or more fields in the gRPC request message, as" +
-			" long as each field is a non-repeated field with a primitive (non-message) type")
+			" long as each field is a non-repeated field with a primitive (non-message) type. " +
+			"See: https://github.com/googleapis/googleapis/blob/master/google/api/http.proto#L62 for more information.")
 	}
-
-	return field, nil
 }
 
 // Validates if the query parameter has the requested structure.
-// This is necessary according to: https://github.com/googleapis/googleapis/blob/a8ee1416f4c588f2ab92da72e7c1f588c784d3e6/google/api/http.proto#L119
-func validateQueryParameter(field *surface_v1.Field) (*surface_v1.Field, error) {
+// This is necessary according to: https://github.com/googleapis/googleapis/blob/master/google/api/http.proto#L118
+func validateQueryParameter(field *surface_v1.Field) {
 	if !(field.Kind == surface_v1.FieldKind_SCALAR ||
 		(field.Kind == surface_v1.FieldKind_ARRAY && openAPIScalarTypes[field.Type]) ||
 		(field.Kind == surface_v1.FieldKind_REFERENCE)) {
-		return nil, errors.New("The query parameter with the Name " + field.Name + " is invalid. " +
+		log.Println("The query parameter with the Name " + field.Name + " is invalid. " +
 			"Note that fields which are mapped to URL query parameters must have a primitive type or" +
-			" a repeated primitive type or a non-repeated message type.")
+			" a repeated primitive type or a non-repeated message type. " +
+			"See: https://github.com/googleapis/googleapis/blob/master/google/api/http.proto#L118 for more information.")
 	}
 
-	return field, nil
-}
-
-// If 'field' is a reference and holds a path parameter, then it will be flattened, meaning that the
-// values of the reference, will be written into 'field'.
-func flattenPathParameter(field *surface_v1.Field, types []*surface_v1.Type) (*surface_v1.Field, error) {
-	// We got a reference to a parameter. Let's get the actual type.
-	t, err := getType(field.Type, types)
-	if err != nil {
-		return nil, err
-	}
-
-	if t.Fields[0].Position != surface_v1.Position_PATH {
-		return field, nil
-	}
-	if len(t.Fields) > 1 || t.Fields[0].Kind != surface_v1.FieldKind_SCALAR {
-		return nil, errors.New("Not possible to flatten multiple fields or non-scalar values. ")
-	}
-
-	// Ok, it is possible to flatten the path parameter.
-	field.Type = t.Fields[0].Type
-	field.Name = t.Fields[0].Name
-	field.Format = t.Fields[0].Format
-	field.Kind = t.Fields[0].Kind
-	field.Position = surface_v1.Position_PATH
-	return field, nil
 }
 
 // Checks whether 't' is a type that will be used as a request parameter for a RPC method.
@@ -333,14 +319,8 @@ func setFieldDescriptorType(fd *dpb.FieldDescriptorProto, f *surface_v1.Field) {
 // Sets the Name of 'fd'. The convention inside .proto is, that all field names are
 // lowercase and all messages and types are capitalized if they are not scalar types (int64, string, ...).
 func setFieldDescriptorName(fd *dpb.FieldDescriptorProto, f *surface_v1.Field) {
-	name := strings.ToLower(f.Name)
-
-	if name == "200" {
-		name = "ok"
-	}
-	if name == "400" {
-		name = "badRequest"
-	}
+	name := cleanName(f.Name)
+	name = strings.ToLower(name)
 	fd.Name = &name
 }
 
@@ -357,12 +337,9 @@ func setFieldDescriptorLabel(fd *dpb.FieldDescriptorProto, f *surface_v1.Field) 
 // The convention inside .proto is, that all field names are lowercase and all messages and types are capitalized if
 // they are not scalar types (int64, string, ...).
 func setFieldDescriptorTypeName(fd *dpb.FieldDescriptorProto, f *surface_v1.Field) {
-	typeName := ""
 	if *fd.Type == dpb.FieldDescriptorProto_TYPE_MESSAGE {
-		// It is either a reference or an array of non scalar-types or a map. In case of a map it will get overwritten again.
-		typeName = strings.Title(f.Type)
-	}
-	if typeName != "" {
+		typeName := cleanName(f.Type)
+		typeName = strings.Title(typeName)
 		fd.TypeName = &typeName
 	}
 }
@@ -430,25 +407,6 @@ func getHttpRuleForMethod(method *surface_v1.Method, body *string) annotations.H
 	return httpRule
 }
 
-// Searches all types from the surface model for a given type 'name'. Returns a type if there is
-// a match, nil if there is no match, and error if there are multiple types.
-func getType(name string, types []*surface_v1.Type) (*surface_v1.Type, error) {
-	var result []*surface_v1.Type
-	for _, t := range types {
-		if name == t.Name {
-			result = append(result, t)
-		}
-	}
-	if len(result) > 1 {
-		return nil, errors.New("Multiple types with the same name exist. This is due to the fact" +
-			" that there are multiple components inside the OpenAPI specification with the same Name. ")
-	}
-	if len(result) == 1 {
-		return result[0], nil
-	}
-	return nil, nil
-}
-
 // Returns the type name for the given 'valueType'. A type name for a field is only set if it is some kind of
 // reference (non-scalar values) otherwise it is nil.
 func getTypeNameForMapValueType(valueType string) *string {
@@ -456,7 +414,9 @@ func getTypeNameForMapValueType(valueType string) *string {
 		// Ok it is a scalar. For scalar values we don't set the TypeName of the field.
 		return nil
 	}
-	return &valueType
+	typeName := cleanName(valueType)
+	typeName = strings.Title(typeName)
+	return &typeName
 }
 
 // Returns the 'protoType' for the given 'valueType'. If we don't have a scalar 'protoType', we have some kind of
@@ -512,6 +472,19 @@ func getOpenAPIScalarTypes() map[string]bool {
 		"number":  true,
 		"boolean": true,
 	}
+}
+
+func convertStatusCodes(name string) string {
+	code, err := strconv.Atoi(name)
+	if err == nil {
+		statusText := nethttp.StatusText(code)
+		if statusText == "" {
+			log.Println("It seems like you have an status code that is currently not known to net.http.StatusText. This might cause the plugin to fail.")
+			statusText = "unknownStatusCode"
+		}
+		name = strings.Replace(statusText, " ", "_", -1)
+	}
+	return name
 }
 
 //TODO: Check out test cases with resolve ref inside gnostic
