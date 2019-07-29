@@ -45,22 +45,6 @@ func TestFileDescriptorGeneratorParameters(t *testing.T) {
 	}
 
 	checkContents(t, string(protoData), "goldstandard/parameter.proto")
-
-	erroneousInput := []string{"testfiles/errors/invalid_path_param.yaml", "testfiles/errors/invalid_query_param.yaml"}
-
-	for _, errorInput := range erroneousInput {
-		errorMessages := map[string]bool{
-			"The path parameter with the Name param1 is invalid. The path template may refer to one or more fields in the gRPC request message, as long as each field is a non-repeated field with a primitive (non-message) type": true,
-			"The query parameter with the Name param1 is invalid. Note that fields which are mapped to URL query parameters must have a primitive type or a repeated primitive type or a non-repeated message type.":               true,
-		}
-		protoData, err = runGeneratorWithoutEnvironment(errorInput)
-		if _, ok := errorMessages[err.Error()]; !ok {
-			// If we don't get an error from the generator the test fails!
-			t.Errorf("Error while executing the descriptor generator")
-			t.Errorf(err.Error())
-		}
-	}
-
 }
 
 func TestFileDescriptorGeneratorRequestBodies(t *testing.T) {
