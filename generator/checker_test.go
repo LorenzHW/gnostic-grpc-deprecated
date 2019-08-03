@@ -97,6 +97,6 @@ func validateMessages(t *testing.T, expectedMessageTexts []string, messages []*p
 func readOpenAPIBinary(input string) *openapiv3.Document {
 	cmd := exec.Command("gnostic", "--pb-out=-", input)
 	b, _ := cmd.Output()
-	documentv3, _ := createOpenAPIdocFromGnosticOutput(b)
+	documentv3, _ := createOpenAPIDocFromGnosticOutput(b)
 	return documentv3
 }

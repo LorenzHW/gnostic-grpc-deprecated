@@ -15,8 +15,6 @@
 package generator
 
 import (
-	"github.com/golang/protobuf/proto"
-	openapiv3 "github.com/googleapis/gnostic/OpenAPIv3"
 	surface "github.com/googleapis/gnostic/surface"
 	"io/ioutil"
 	"os"
@@ -39,7 +37,7 @@ const (
 func TestFileDescriptorGeneratorParameters(t *testing.T) {
 	input := "testfiles/parameters.yaml"
 
-	protoData, err := runGeneratorWithoutEnvironment(input)
+	protoData, err := runGeneratorWithoutEnvironment(input, "parameters")
 	if err != nil {
 		handleError(err, t)
 	}
@@ -50,7 +48,7 @@ func TestFileDescriptorGeneratorParameters(t *testing.T) {
 func TestFileDescriptorGeneratorRequestBodies(t *testing.T) {
 	input := "testfiles/requestBodies.yaml"
 
-	protoData, err := runGeneratorWithoutEnvironment(input)
+	protoData, err := runGeneratorWithoutEnvironment(input, "requestbodies")
 	if err != nil {
 		handleError(err, t)
 	}
@@ -62,7 +60,7 @@ func TestFileDescriptorGeneratorRequestBodies(t *testing.T) {
 func TestFileDescriptorGeneratorResponses(t *testing.T) {
 	input := "testfiles/responses.yaml"
 
-	protoData, err := runGeneratorWithoutEnvironment(input)
+	protoData, err := runGeneratorWithoutEnvironment(input, "responses")
 	if err != nil {
 		handleError(err, t)
 	}
@@ -70,39 +68,56 @@ func TestFileDescriptorGeneratorResponses(t *testing.T) {
 }
 
 func TestFileDescriptorGeneratorOther(t *testing.T) {
+	// It could happen that this tests fails, because the imports get rendered in a different order.
+	// Just execute it again.
 	input := "testfiles/other.yaml"
 
-	protoData, err := runGeneratorWithoutEnvironment(input)
+	protoData, err := runGeneratorWithoutEnvironment(input, "other")
 	if err != nil {
 		handleError(err, t)
 	}
 	checkContents(t, string(protoData), "goldstandard/other.proto")
+
+	erroneousInput := []string{"testfiles/errors/cyclic_dependency_1.yaml"}
+
+	for _, errorInput := range erroneousInput {
+		errorMessages := map[string]bool{
+			"cycle in imports: cyclic_dependency_2.proto -> cyclic_dependency_1.proto -> cyclic_dependency_2.proto": true,
+		}
+		protoData, err = runGeneratorWithoutEnvironment(errorInput, "cyclic_dependency_1")
+		if _, ok := errorMessages[err.Error()]; !ok {
+			// If we don't get an error from the generator the test fails!
+			handleError(err, t)
+		}
+	}
 }
 
-func runGeneratorWithoutEnvironment(input string) ([]byte, error) {
-	surfaceModel := buildSurfaceModel(input)
+func runGeneratorWithoutEnvironment(input string, packageName string) ([]byte, error) {
+	surfaceModel, err := buildSurfaceModel(input)
+	if err != nil {
+		return nil, err
+	}
 	r := NewRenderer(surfaceModel)
-	r.Package = "testPackage"
+	r.Package = packageName
 
-	fdSet, err := r.RunFileDescriptorSetGenerator()
+	fdSet, err := r.runFileDescriptorSetGenerator()
 	r.FdSet = fdSet
 	if err != nil {
 		return nil, err
 	}
-
-	f, err := r.RenderProto("")
+	f, err := r.RenderProto(fdSet, "")
 	if err != nil {
 		return nil, err
 	}
 	return f.Data, err
 }
 
-func buildSurfaceModel(input string) *surface.Model {
+func buildSurfaceModel(input string) (*surface.Model, error) {
 	cmd := exec.Command("gnostic", "--pb-out=-", input)
 	b, _ := cmd.Output()
-	documentv3, _ := createOpenAPIdocFromGnosticOutput(b)
-	surfaceModel, _ := surface.NewModelFromOpenAPI3(documentv3, input)
-	return surfaceModel
+	documentv3, _ := createOpenAPIDocFromGnosticOutput(b)
+	surfaceModel, err := surface.NewModelFromOpenAPI3(documentv3, input)
+	return surfaceModel, err
 }
 
 func writeFile(output string, protoData []byte) {
@@ -130,18 +145,6 @@ func checkContents(t *testing.T, actualContents string, goldenFileName string) {
 	if goldstandard != actualContents {
 		t.Errorf("File contents does not match.")
 	}
-}
-
-func createOpenAPIdocFromGnosticOutput(binaryInput []byte) (*openapiv3.Document, error) {
-	document := &openapiv3.Document{}
-	err := proto.Unmarshal(binaryInput, document)
-	if err != nil {
-		// If we execute gnostic with argument: '-pb-out=-' we get an EOF
-		if err.Error() != "unexpected EOF" {
-			return nil, err
-		}
-	}
-	return document, nil
 }
 
 func handleError(err error, t *testing.T) {

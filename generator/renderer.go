@@ -29,20 +29,22 @@ type Renderer struct {
 	// The model holds the necessary information from the OpenAPI description.
 	Model *surface.Model
 	// The FileDescriptorSet that will be printed with protoreflect
-	FdSet   *dpb.FileDescriptorSet
-	Package string // package name
+	FdSet          *dpb.FileDescriptorSet
+	SymbolicFdSets []*dpb.FileDescriptorSet
+	Package        string // package name
 }
 
 // NewRenderer creates a renderer.
 func NewRenderer(model *surface.Model) (renderer *Renderer) {
 	renderer = &Renderer{}
 	renderer.Model = model
+	renderer.SymbolicFdSets = make([]*dpb.FileDescriptorSet, 0)
 	return renderer
 }
 
 // Generate runs the renderer to generate the named files.
 func (renderer *Renderer) Render(response *plugins.Response, fileName string) (err error) {
-	renderer.FdSet, err = renderer.RunFileDescriptorSetGenerator()
+	renderer.FdSet, err = renderer.runFileDescriptorSetGenerator()
 
 	if err != nil {
 		return err
@@ -56,15 +58,28 @@ func (renderer *Renderer) Render(response *plugins.Response, fileName string) (e
 		response.Files = append(response.Files, f)
 	}
 
-	f, err := renderer.RenderProto(fileName)
+	// Render main proto definition.
+	f, err := renderer.RenderProto(renderer.FdSet, fileName)
+	if err != nil {
+		return err
+	}
 	response.Files = append(response.Files, f)
+
+	// Render external proto definitions.
+	for _, externalSet := range renderer.SymbolicFdSets {
+		f, err = renderer.RenderProto(externalSet, *getLast(externalSet.File).Name)
+		if err != nil {
+			return err
+		}
+		response.Files = append(response.Files, f)
+	}
 
 	return err
 }
 
-func (renderer *Renderer) RenderProto(fileName string) (*plugins.File, error) {
+func (renderer *Renderer) RenderProto(fdSet *dpb.FileDescriptorSet, fileName string) (*plugins.File, error) {
 	// Creates a protoreflect FileDescriptor, which is then used for printing.
-	prFd, err := prDesc.CreateFileDescriptorFromSet(renderer.FdSet)
+	prFd, err := prDesc.CreateFileDescriptorFromSet(fdSet)
 	if err != nil {
 		return nil, err
 	}

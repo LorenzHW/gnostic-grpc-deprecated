@@ -47,11 +47,7 @@ message CreateShelfRequestBody {
 }
 
 message CreateShelfParameters {
-  CreateShelfRequestBody request_body = 1;
-}
-
-message CreateShelfOK {
-  Shelf application_json = 1;
+  Shelf shelf = 1;
 }
 
 message CreateShelfResponses {
