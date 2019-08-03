@@ -97,16 +97,6 @@ paths:
       responses:
         200:
           description: success
-
-  /testFlattenParameter/{param2}:
-    get:
-      operationId: testFlattenParameter
-      parameters:
-        - $ref: '#/components/parameters/Parameter2'
-      responses:
-        200:
-          description: success
-
 components:
   parameters:
     Parameter1:

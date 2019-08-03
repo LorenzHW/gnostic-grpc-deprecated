@@ -23,23 +23,41 @@ message Person {
 }
 
 message Response {
-  Person response = 1;
+  Person application_json = 1;
+}
+
+message TestResponseNativeOK {
+  string application_json = 1;
 }
 
 message TestResponseNativeResponses {
-  string ok = 1;
+  TestResponseNativeOK ok = 1;
+}
+
+message TestResponseReferenceOK {
+  Person application_json = 1;
 }
 
 message TestResponseReferenceResponses {
-  Person ok = 1;
+  TestResponseReferenceOK ok = 1;
+}
+
+message TestResponseMultipleContentOK {
+  Person application_json = 1;
+
+  Person application_xml = 2;
 }
 
 message TestResponseMultipleContentResponses {
-  Person ok = 1;
+  TestResponseMultipleContentOK ok = 1;
+}
+
+message TestResponse400StatusCodeBadRequest {
+  Error application_json = 1;
 }
 
 message TestResponse400StatusCodeResponses {
-  Error badRequest = 1;
+  TestResponse400StatusCodeBadRequest bad_request = 1;
 }
 
 message TestResponseComponentReferenceResponses {

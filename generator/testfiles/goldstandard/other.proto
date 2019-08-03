@@ -16,15 +16,39 @@ message Person {
   repeated string photourls = 4;
 }
 
+message TestAdditionalPropertiesOKapplicationJson {
+  map<string, int32> additional_properties = 1;
+}
+
+message TestAdditionalPropertiesOK {
+  TestAdditionalPropertiesOKapplicationJson application_json = 1;
+}
+
 message TestAdditionalPropertiesResponses {
-  map<string, int32> ok = 1;
+  TestAdditionalPropertiesOK ok = 1;
+}
+
+message TestAdditionalPropertiesReferenceOKapplicationJson {
+  map<string, Person> additional_properties = 1;
+}
+
+message TestAdditionalPropertiesReferenceOK {
+  TestAdditionalPropertiesReferenceOKapplicationJson application_json = 1;
 }
 
 message TestAdditionalPropertiesReferenceResponses {
-  map<string, Person> ok = 1;
+  TestAdditionalPropertiesReferenceOK ok = 1;
+}
+
+message TestAdditionalPropertiesArrayOKapplicationJson {
+}
+
+message TestAdditionalPropertiesArrayOK {
+  TestAdditionalPropertiesArrayOKapplicationJson application_json = 1;
 }
 
 message TestAdditionalPropertiesArrayResponses {
+  TestAdditionalPropertiesArrayOK ok = 1;
 }
 
 service TestPackage {

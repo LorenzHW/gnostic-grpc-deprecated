@@ -40,10 +40,6 @@ message TestParameterReferenceParameters {
   Parameter1 parameter1 = 1;
 }
 
-message TestFlattenParameterParameters {
-  int64 param8 = 1;
-}
-
 service TestPackage {
   rpc TestParameterQuery ( TestParameterQueryParameters ) returns ( google.protobuf.Empty ) {
     option (google.api.http) = { get:"/testParameterQuery"  };
@@ -67,10 +63,6 @@ service TestPackage {
 
   rpc TestParameterReference ( TestParameterReferenceParameters ) returns ( google.protobuf.Empty ) {
     option (google.api.http) = { get:"/testParameterReference"  };
-  }
-
-  rpc TestFlattenParameter ( TestFlattenParameterParameters ) returns ( google.protobuf.Empty ) {
-    option (google.api.http) = { get:"/testFlattenParameter/{param2}"  };
   }
 }
 

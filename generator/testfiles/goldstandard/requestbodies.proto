@@ -17,24 +17,28 @@ message Person {
 }
 
 message RequestBody {
-  Person person = 1;
+  Person application_json = 1;
+}
+
+message TestRequestBodyRequestBody {
+  Person application_json = 1;
 }
 
 message TestRequestBodyParameters {
-  Person person = 1;
+  TestRequestBodyRequestBody request_body = 1;
 }
 
 message TestRequestBodyReferenceParameters {
-  RequestBody requestbody = 1;
+  RequestBody request_body = 1;
 }
 
 service TestPackage {
   rpc TestRequestBody ( TestRequestBodyParameters ) returns ( google.protobuf.Empty ) {
-    option (google.api.http) = { get:"/testRequestBody" body:"person"  };
+    option (google.api.http) = { get:"/testRequestBody" body:"request_body"  };
   }
 
   rpc TestRequestBodyReference ( TestRequestBodyReferenceParameters ) returns ( google.protobuf.Empty ) {
-    option (google.api.http) = { get:"/testRequestBodyReference" body:"requestbody"  };
+    option (google.api.http) = { get:"/testRequestBodyReference" body:"request_body"  };
   }
 }
 
