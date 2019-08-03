@@ -42,7 +42,7 @@ func TestFileDescriptorGeneratorParameters(t *testing.T) {
 		handleError(err, t)
 	}
 
-	checkContents(t, string(protoData), "goldstandard/parameter.proto")
+	checkContents(t, string(protoData), "goldstandard/parameters.proto")
 }
 
 func TestFileDescriptorGeneratorRequestBodies(t *testing.T) {

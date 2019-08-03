@@ -1,10 +1,12 @@
 syntax = "proto3";
 
-package testPackage;
+package parameters;
 
 import "google/api/annotations.proto";
 
 import "google/protobuf/empty.proto";
+
+import "google/protobuf/descriptor.proto";
 
 message Parameter1 {
   int64 param7 = 1;
@@ -40,7 +42,7 @@ message TestParameterReferenceParameters {
   Parameter1 parameter1 = 1;
 }
 
-service TestPackage {
+service Parameters {
   rpc TestParameterQuery ( TestParameterQueryParameters ) returns ( google.protobuf.Empty ) {
     option (google.api.http) = { get:"/testParameterQuery"  };
   }

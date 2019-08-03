@@ -1,10 +1,16 @@
 syntax = "proto3";
 
-package testPackage;
+package other;
+
+import "responses.proto";
+
+import "parameters.proto";
 
 import "google/api/annotations.proto";
 
 import "google/protobuf/empty.proto";
+
+import "google/protobuf/descriptor.proto";
 
 message Person {
   int64 id = 1;
@@ -14,6 +20,14 @@ message Person {
   string name = 3;
 
   repeated string photourls = 4;
+}
+
+message TestExternalReferenceResponses {
+  responses.Response ok = 1;
+}
+
+message TestExernalReference2Parameters {
+  parameters.Parameter2  = 1;
 }
 
 message TestAdditionalPropertiesOKapplicationJson {
@@ -51,7 +65,15 @@ message TestAdditionalPropertiesArrayResponses {
   TestAdditionalPropertiesArrayOK ok = 1;
 }
 
-service TestPackage {
+service Other {
+  rpc TestExternalReference ( google.protobuf.Empty ) returns ( TestExternalReferenceResponses ) {
+    option (google.api.http) = { get:"/testExternalReference"  };
+  }
+
+  rpc TestExernalReference2 ( TestExernalReference2Parameters ) returns ( google.protobuf.Empty ) {
+    option (google.api.http) = { get:"/testExternalReference2"  };
+  }
+
   rpc TestAdditionalProperties ( google.protobuf.Empty ) returns ( TestAdditionalPropertiesResponses ) {
     option (google.api.http) = { get:"/testAdditionalProperties"  };
   }
