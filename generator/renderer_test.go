@@ -89,6 +89,7 @@ func runGeneratorWithoutEnvironment(input string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	f, err := r.RenderProto("")
 	if err != nil {
 		return nil, err
@@ -100,7 +101,7 @@ func buildSurfaceModel(input string) *surface.Model {
 	cmd := exec.Command("gnostic", "--pb-out=-", input)
 	b, _ := cmd.Output()
 	documentv3, _ := createOpenAPIdocFromGnosticOutput(b)
-	surfaceModel, _ := surface.NewModelFromOpenAPI3(documentv3)
+	surfaceModel, _ := surface.NewModelFromOpenAPI3(documentv3, input)
 	return surfaceModel
 }
 

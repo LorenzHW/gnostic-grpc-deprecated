@@ -164,19 +164,28 @@ func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) 
 }
 
 func setMessageDescriptorName(messageDescriptorProto *dpb.DescriptorProto, name string) {
-	name = cleanName(name)
-	name = strings.Title(name)
+	name = cleanTypeName(name)
 	messageDescriptorProto.Name = &name
 }
 
 func cleanName(name string) string {
 	name = convertStatusCodes(name)
-	name = strings.Replace(name, "-", "", -1)
+	name = strings.Replace(name, "-", "_", -1)
 	name = strings.Replace(name, " ", "", -1)
 	name = strings.Replace(name, "(", "", -1)
 	name = strings.Replace(name, ")", "", -1)
 	name = strings.Replace(name, "{", "", -1)
 	name = strings.Replace(name, "}", "", -1)
+	name = strings.Replace(name, "/", "_", -1)
+	return name
+}
+
+func cleanTypeName(name string) string {
+	name = cleanName(name)
+	// Make camelCase
+	name = strings.Replace(name, "_", " ", -1)
+	name = strings.Title(name)
+	name = strings.Replace(name, " ", "", -1)
 	return name
 }
 
@@ -338,8 +347,7 @@ func setFieldDescriptorLabel(fd *dpb.FieldDescriptorProto, f *surface_v1.Field) 
 // they are not scalar types (int64, string, ...).
 func setFieldDescriptorTypeName(fd *dpb.FieldDescriptorProto, f *surface_v1.Field) {
 	if *fd.Type == dpb.FieldDescriptorProto_TYPE_MESSAGE {
-		typeName := cleanName(f.Type)
-		typeName = strings.Title(typeName)
+		typeName := cleanTypeName(f.Type)
 		fd.TypeName = &typeName
 	}
 }
@@ -414,8 +422,7 @@ func getTypeNameForMapValueType(valueType string) *string {
 		// Ok it is a scalar. For scalar values we don't set the TypeName of the field.
 		return nil
 	}
-	typeName := cleanName(valueType)
-	typeName = strings.Title(typeName)
+	typeName := cleanTypeName(valueType)
 	return &typeName
 }
 
