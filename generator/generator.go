@@ -237,33 +237,6 @@ func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) 
 	return nil
 }
 
-func setMessageDescriptorName(messageDescriptorProto *dpb.DescriptorProto, name string) {
-	name = cleanTypeName(name)
-	messageDescriptorProto.Name = &name
-}
-
-func cleanName(name string) string {
-	name = convertStatusCodes(name)
-	name = strings.Replace(name, "-", "_", -1)
-	name = strings.Replace(name, " ", "", -1)
-	name = strings.Replace(name, "(", "", -1)
-	name = strings.Replace(name, ")", "", -1)
-	name = strings.Replace(name, "{", "", -1)
-	name = strings.Replace(name, "}", "", -1)
-	name = strings.Replace(name, "/", "_", -1)
-	name = strings.Replace(name, "$", "", -1)
-	return name
-}
-
-func cleanTypeName(name string) string {
-	name = cleanName(name)
-	// Make camelCase
-	name = strings.Replace(name, "_", " ", -1)
-	name = strings.Title(name)
-	name = strings.Replace(name, " ", "", -1)
-	return name
-}
-
 // Builds a protobuf RPC service. For every method the corresponding gRPC-HTTP transcoding options (https://github.com/googleapis/googleapis/blob/master/google/api/http.proto)
 // have to be set.
 func buildServiceFromMethods(descr *dpb.FileDescriptorProto, renderer *Renderer) (err error) {
@@ -556,6 +529,7 @@ func isDuplicate(ss []string, s string) bool {
 	return false
 }
 
+// returns the last FileDescriptorProto of the array 'protos'.
 func getLast(protos []*dpb.FileDescriptorProto) *dpb.FileDescriptorProto {
 	return protos[len(protos)-1]
 }
@@ -605,6 +579,37 @@ func getOpenAPIScalarTypes() map[string]bool {
 	}
 }
 
+// Sets the name of the 'messageDescriptorProto'
+func setMessageDescriptorName(messageDescriptorProto *dpb.DescriptorProto, name string) {
+	name = cleanTypeName(name)
+	messageDescriptorProto.Name = &name
+}
+
+// Removes characters which are not allowed for message names or field names inside .proto files.
+func cleanName(name string) string {
+	name = convertStatusCodes(name)
+	name = strings.Replace(name, "-", "_", -1)
+	name = strings.Replace(name, " ", "", -1)
+	name = strings.Replace(name, "(", "", -1)
+	name = strings.Replace(name, ")", "", -1)
+	name = strings.Replace(name, "{", "", -1)
+	name = strings.Replace(name, "}", "", -1)
+	name = strings.Replace(name, "/", "_", -1)
+	name = strings.Replace(name, "$", "", -1)
+	return name
+}
+
+// Since our convention is that all messages inside .proto are capitalized, we set the typeName accordingly.
+func cleanTypeName(name string) string {
+	name = cleanName(name)
+	// Make camelCase
+	name = strings.Replace(name, "_", " ", -1)
+	name = strings.Title(name)
+	name = strings.Replace(name, " ", "", -1)
+	return name
+}
+
+// Converts a string status code like: "504" into the corresponding text ("Gateway Timeout")
 func convertStatusCodes(name string) string {
 	code, err := strconv.Atoi(name)
 	if err == nil {
