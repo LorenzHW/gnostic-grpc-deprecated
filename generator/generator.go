@@ -203,11 +203,6 @@ func buildMessagesFromTypes(descr *dpb.FileDescriptorProto, renderer *Renderer) 
 		setMessageDescriptorName(message, t.Name)
 
 		for i, f := range t.Fields {
-			if f.Type == "todo" {
-				log.Printf("unimplemented: %v", f)
-				continue
-			}
-
 			if isRequestParameter(t) {
 				if f.Position == surface_v1.Position_PATH {
 					validatePathParameter(f)
@@ -256,6 +251,7 @@ func cleanName(name string) string {
 	name = strings.Replace(name, "{", "", -1)
 	name = strings.Replace(name, "}", "", -1)
 	name = strings.Replace(name, "/", "_", -1)
+	name = strings.Replace(name, "$", "", -1)
 	return name
 }
 
@@ -287,8 +283,8 @@ func buildServiceFromMethods(descr *dpb.FileDescriptorProto, renderer *Renderer)
 			return err
 		}
 
-		method.ParametersTypeName = cleanName(method.ParametersTypeName)
-		method.ResponsesTypeName = cleanName(method.ResponsesTypeName)
+		method.ParametersTypeName = cleanTypeName(method.ParametersTypeName)
+		method.ResponsesTypeName = cleanTypeName(method.ResponsesTypeName)
 		method.ParametersTypeName = strings.Title(method.ParametersTypeName)
 		method.ResponsesTypeName = strings.Title(method.ResponsesTypeName)
 
@@ -501,8 +497,10 @@ func getHttpRuleForMethod(method *surface_v1.Method, body *string) annotations.H
 // reference (non-scalar values) otherwise it is nil.
 func getTypeNameForMapValueType(valueType string) *string {
 	if _, ok := protoBufScalarTypes[valueType]; ok {
-		// Ok it is a scalar. For scalar values we don't set the TypeName of the field.
-		return nil
+		return nil // Ok it is a scalar. For scalar values we don't set the TypeName of the field.
+	}
+	if _, ok := openAPIScalarTypes[valueType]; ok {
+		return nil // Ok it is a scalar. For scalar values we don't set the TypeName of the field.
 	}
 	typeName := cleanTypeName(valueType)
 	return &typeName
@@ -514,6 +512,11 @@ func getProtoTypeForMapValueType(valueType string) *dpb.FieldDescriptorProto_Typ
 	protoType := dpb.FieldDescriptorProto_TYPE_MESSAGE
 	if protoType, ok := protoBufScalarTypes[valueType]; ok {
 		return &protoType
+	}
+	if _, ok := openAPIScalarTypes[valueType]; ok {
+		if protoType, ok := openAPITypesToProtoBuf[valueType]; ok {
+			return &protoType
+		}
 	}
 	return &protoType
 }
